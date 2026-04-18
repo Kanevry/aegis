@@ -12,8 +12,10 @@ Built during the [Codex Community Hackathon Vienna 2026-04-18](https://codex-hac
 ## Hackathon Submission
 
 - **Live demo:** https://aegis-codex.vercel.app
-- **Demo video:** {{VIDEO_URL}}
+- **Demo video:** [`demo.mp4`](./demo.mp4)
 - **Submission description:** [`docs/submission-description.md`](docs/submission-description.md)
+
+https://github.com/Kanevry/aegis/raw/main/demo.mp4
 
 Open the live demo → click Testbed → fire any attack. Observe Flow visualization + Sentry issue link in real time.
 

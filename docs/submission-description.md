@@ -8,7 +8,7 @@ word_count: ~200
 
 **GitHub repo:** https://github.com/Kanevry/aegis
 **Live demo:** https://aegis-codex.vercel.app
-**Demo video:** {{VIDEO_URL}}
+**Demo video:** https://github.com/Kanevry/aegis/raw/main/demo.mp4
 **Built:** Codex Vienna · 2026-04-18 · 11:00–17:00 CEST
 
 ---
