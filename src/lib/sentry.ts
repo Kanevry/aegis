@@ -67,8 +67,9 @@ export function withHardeningSpan<T>(
  */
 export function captureAegisBlock(result: HardeningResult, patternId?: string): void {
   const primaryLayer = result.blockedLayers[0] ?? 'unknown';
-  const fingerprint = patternId
-    ? ['aegis-block', primaryLayer, patternId]
+  const normalizedPatternId = typeof patternId === 'string' ? patternId.trim() : undefined;
+  const fingerprint = normalizedPatternId
+    ? ['aegis-block', primaryLayer, normalizedPatternId]
     : ['aegis-block', primaryLayer];
 
   Sentry.captureException(new AegisBlockedException(result), {

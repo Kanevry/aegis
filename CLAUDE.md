@@ -121,3 +121,20 @@ Split driven by the two jury-relevant tracks: **Agentic Coding** (we build with 
 ## License
 
 MIT.
+
+## Session Config
+
+persistence: true
+enforcement: warn
+vcs: github
+project-name: aegis
+waves: 5
+agents-per-wave: 6
+recent-commits: 20
+issue-limit: 50
+stale-branch-days: 7
+stale-issue-days: 30
+test-command: pnpm test --run
+typecheck-command: pnpm typecheck
+lint-command: pnpm lint
+plugin-freshness-days: 30

@@ -14,14 +14,28 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createHardening } from '@aegis/hardening';
+import { getAttackById } from '@/lib/attacks';
 import { withHardeningSpan, captureAegisBlock } from '@/lib/sentry';
 
 export const runtime = 'nodejs';
 
+const PatternIdSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  },
+  z.string().min(1).max(128).optional(),
+);
+
 const BodySchema = z.object({
   prompt: z.string().min(1).max(10_000),
   provider: z.enum(['openai', 'anthropic']).default('openai'),
-});
+  patternId: PatternIdSchema,
+}).strict();
 
 export async function POST(req: NextRequest) {
   // Parse + validate
@@ -38,11 +52,12 @@ export async function POST(req: NextRequest) {
   // Hardening — pass prompt as a path so B1 catches traversal sequences
   const hardening = createHardening();
   const result = hardening.run({ prompt: body.prompt, paths: [body.prompt] });
+  const stablePatternId = body.patternId ? getAttackById(body.patternId)?.id : undefined;
 
   // Sentry span with aegis.* attributes — delegates to withHardeningSpan for clean attribute wiring
   return withHardeningSpan('aegis.run', result, async () => {
     if (!result.allowed) {
-      captureAegisBlock(result);
+      captureAegisBlock(result, stablePatternId);
 
       return Response.json(
         {

@@ -152,6 +152,18 @@ describe('captureAegisBlock', () => {
     expect(opts.fingerprint).toEqual(['aegis-block', 'B1', 'path-traversal-001']);
   });
 
+  it('trims patternId before adding it to the fingerprint', () => {
+    captureAegisBlock(makeResult({ blockedLayers: ['B1'] }), '  path-traversal-001  ');
+    const [, opts] = mockCaptureException.mock.calls[0] as [unknown, { fingerprint: string[] }];
+    expect(opts.fingerprint).toEqual(['aegis-block', 'B1', 'path-traversal-001']);
+  });
+
+  it('omits blank patternId values from the fingerprint', () => {
+    captureAegisBlock(makeResult({ blockedLayers: ['B1'] }), '   ');
+    const [, opts] = mockCaptureException.mock.calls[0] as [unknown, { fingerprint: string[] }];
+    expect(opts.fingerprint).toEqual(['aegis-block', 'B1']);
+  });
+
   it('sets aegis.layer tag to primary blocked layer', () => {
     captureAegisBlock(makeResult({ blockedLayers: ['B4'] }));
     const [, opts] = mockCaptureException.mock.calls[0] as [unknown, { tags: Record<string, string> }];
