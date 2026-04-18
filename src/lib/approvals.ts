@@ -1,6 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Approval, ApprovalDecision, ApprovalDecidedBy } from "@aegis/types";
 import { createServiceRoleClient } from "./supabase";
+import { enqueue, QUEUES } from "./pgboss-client";
+
+async function scheduleExpire(id: string, delaySeconds = 900): Promise<void> {
+  try {
+    await enqueue(QUEUES.APPROVAL_EXPIRE, { id }, { startAfter: delaySeconds });
+  } catch (err) {
+    // pg-boss down → approval still persists; log and continue (best-effort schedule)
+    console.warn('[approvals] failed to schedule approval.expire', err);
+  }
+}
 
 // Inline type for CreateApprovalInput so we don't widen @aegis/types for internal params
 export type CreateApprovalInput = {
@@ -45,7 +55,7 @@ export async function createApproval(
   if (error) throw new Error(`createApproval failed: ${error.message}`);
   if (!data) throw new Error("createApproval returned no data");
 
-  // Wave 3 (agent P3) will attach approval.expire TTL scheduling via pg-boss here.
+  await scheduleExpire(data.id);
   return data;
 }
 
