@@ -32,6 +32,10 @@ services:
     environment:
       OPENCLAW_GATEWAY_PORT: ${OPENCLAW_GATEWAY_PORT:-18789}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_AGENT_ID: ${OPENCLAW_AGENT_ID:-main}
+      OPENCLAW_AGENT_DIR: /var/lib/openclaw/state/agents/${OPENCLAW_AGENT_ID:-main}/agent
+      OPENCLAW_AUTH_SEED_DIR: /opt/openclaw-auth-seed
+      OPENCLAW_MODEL_REF: ${OPENCLAW_MODEL_REF:-openai-codex/gpt-5.4}
       AEGIS_BASE_URL: http://aegis-web:3000
       AEGIS_HEALTH_PATH: /api/runtime/openclaw/health
       AEGIS_SHARED_TOKEN: ${AEGIS_SHARED_TOKEN}
@@ -49,6 +53,7 @@ services:
     tmpfs:
       - /tmp
     volumes:
+      - ./openclaw-auth-seed:/opt/openclaw-auth-seed:ro
       - openclaw-state:/var/lib/openclaw/state
 
 volumes:

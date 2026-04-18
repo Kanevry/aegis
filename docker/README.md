@@ -20,6 +20,7 @@ Under that assumption, the Docker assets here give you:
 - `openclaw/openclaw.json5`: seed OpenClaw config for the containerized gateway.
 - `openclaw/exec-approvals.json`: seed approval policy for host-exec requests.
 - `openclaw/entrypoint.sh`: bootstraps OpenClaw and verifies the expected Aegis endpoint.
+- `openclaw-auth-seed/`: optional read-only auth bundle for external model login seeds.
 - `interfaces/aegis-openclaw-contract.md`: the expected runtime contract Aegis must implement.
 
 ## Quick Start
@@ -84,7 +85,34 @@ The seeded OpenClaw config is intentionally strict:
 - `gateway.auth.mode: "token"` for a real shared-secret control plane,
 - `tools.exec.security: "allowlist"` and `tools.exec.ask: "on-miss"`,
 - `tools.exec.strictInlineEval: true`,
-- seeded `exec-approvals.json` with `askFallback: "deny"`.
+- seeded `exec-approvals.json` with `askFallback: "deny"`,
+- default model wiring via `OPENCLAW_MODEL_REF` (defaults to `openai-codex/gpt-5.4`).
+
+## Codex Provider Seeding
+
+The stack supports an external OpenAI Codex auth seed in the same style used by
+`socrates-methodical`.
+
+- Host seed directory: `docker/openclaw-auth-seed/`
+- Container mount: `/opt/openclaw-auth-seed` (read-only)
+- Runtime target: `/var/lib/openclaw/state/agents/<OPENCLAW_AGENT_ID>/agent/`
+
+If `auth-profiles.json` or `auth.json` exists in the seed directory, the
+entrypoint copies them into the writable OpenClaw agent state before the
+gateway starts.
+
+This lets you provision Codex OAuth outside the container and keep the
+read-only config/approval paths separate from mutable model-auth state.
+
+Generate the seed bundle from the local machine with:
+
+```bash
+cd /Users/andreas/Documents/code/aegis
+pnpm openclaw:export-codex-auth
+```
+
+That command reads `~/.pi/agent/auth.json` by default and writes the resulting
+`auth-profiles.json` + `auth.json` into `docker/openclaw-auth-seed/`.
 
 ## Filesystem Hardening
 
