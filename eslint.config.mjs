@@ -8,6 +8,12 @@ const config = [
     },
   },
   {
+    files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     ignores: ['packages/**/node_modules/**', '**/*.tsbuildinfo', '**/coverage/**'],
   },
 ];
