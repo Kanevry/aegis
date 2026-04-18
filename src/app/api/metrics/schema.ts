@@ -19,7 +19,7 @@ export const MetricsResponseSchema = z.object({
     B4: z.number().int().nonnegative(),
     B5: z.number().int().nonnegative(),
   }),
-  lastUpdatedAt: z.string().datetime(),
+  lastUpdatedAt: z.string().datetime({ offset: true }),
   source: z.enum(['db', 'unavailable']),
 });
 

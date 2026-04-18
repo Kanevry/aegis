@@ -121,14 +121,17 @@ export async function getMetricsSnapshot(): Promise<MetricsSnapshot> {
   const blockedRows = rows.filter((r) => r.outcome === 'blocked');
   const blockedCount = blockedRows.length;
 
-  // avgSafetyScore — mean of non-null safety_score across all rows
-  const scoredRows = rows.filter((r) => r.safety_score !== null);
+  // avgSafetyScore — mean of non-null safety_score across all rows.
+  // Supabase returns `numeric` columns as strings; coerce before averaging.
+  const scoredRows = rows
+    .map((r) => ({ ...r, safety_score: r.safety_score === null ? null : Number(r.safety_score) }))
+    .filter((r): r is DecisionRow & { safety_score: number } =>
+      r.safety_score !== null && Number.isFinite(r.safety_score),
+    );
   const avgSafetyScore =
     scoredRows.length > 0
       ? Math.round(
-          (scoredRows.reduce((sum, r) => sum + (r.safety_score as number), 0) /
-            scoredRows.length) *
-            100,
+          (scoredRows.reduce((sum, r) => sum + r.safety_score, 0) / scoredRows.length) * 100,
         ) / 100
       : null;
 
