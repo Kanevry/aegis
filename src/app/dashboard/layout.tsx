@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               GitHub
             </a>
             <a
-              href="/api/sentry/dashboard"
+              href="https://sentry.io/organizations/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs text-neutral-500 transition-colors hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-neutral-100"
