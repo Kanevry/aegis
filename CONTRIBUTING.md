@@ -34,7 +34,7 @@ Commits should use Conventional Commit prefixes:
 - `test:`
 - `chore:`
 
-Commitlint automation is tracked in [#82](https://github.com/Kanevry/aegis/issues/82), but contributors should already follow the convention manually so history stays readable.
+The repo uses `commitlint` and Husky hooks to enforce this locally. After installing dependencies, run `corepack pnpm prepare` if your hooks are not already present.
 
 ## Development workflow
 
@@ -52,6 +52,11 @@ pnpm test --run
 ```
 
 If your change touches runtime behavior, also smoke-test the app locally with `pnpm dev`.
+
+Local hooks:
+
+- `pre-commit` runs `lint-staged` on changed files only
+- `commit-msg` enforces Conventional Commits through `commitlint`
 
 ## Pull requests
 

@@ -1,0 +1,8 @@
+{
+  "framework": "nextjs",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "env": {
+    "NEXT_PUBLIC_SENTRY_DSN": "@sentry_dsn"
+  }
+}

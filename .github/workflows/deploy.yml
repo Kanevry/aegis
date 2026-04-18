@@ -1,0 +1,107 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+jobs:
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel preview environment
+        run: pnpm dlx vercel@latest pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build preview
+        run: pnpm dlx vercel@latest build --token="$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        id: deploy
+        shell: bash
+        run: |
+          url="$(pnpm dlx vercel@latest deploy --prebuilt --token="$VERCEL_TOKEN" | tail -n 1)"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `Preview deployment ready: ${process.env.PREVIEW_URL}`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+
+  production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel production environment
+        run: pnpm dlx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build production
+        run: pnpm dlx vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy production
+        run: pnpm dlx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      - name: Upload source maps to Sentry
+        if: ${{ secrets.SENTRY_AUTH_TOKEN != '' && secrets.SENTRY_ORG != '' && secrets.SENTRY_PROJECT != '' }}
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          pnpm dlx @sentry/cli@latest releases new "$GITHUB_SHA"
+          pnpm dlx @sentry/cli@latest releases files "$GITHUB_SHA" upload-sourcemaps .next
+          pnpm dlx @sentry/cli@latest releases finalize "$GITHUB_SHA"
