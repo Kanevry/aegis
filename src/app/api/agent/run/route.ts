@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     // Allowed — stream from chosen provider using redactedPrompt
     const model =
       body.provider === 'anthropic'
-        ? anthropic('claude-3-5-sonnet-latest')
+        ? anthropic('claude-haiku-4-5-20251001')
         : openai('gpt-4o-mini');
 
     const streamResult = streamText({
