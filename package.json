@@ -22,10 +22,13 @@
     "typecheck": "tsgo --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "worker:dev": "pnpm --filter @aegis/worker dev",
+    "worker:start": "pnpm --filter @aegis/worker start"
   },
   "dependencies": {
     "@aegis/hardening": "workspace:*",
+    "@aegis/openclaw-client": "workspace:*",
     "@aegis/sandbox": "workspace:*",
     "@aegis/types": "workspace:*",
     "@ai-sdk/anthropic": "^2.0.0",
