@@ -3,28 +3,36 @@
 
 export const runtime = "nodejs";
 
-// TODO #60 rate-limit
-
 import { cookies } from "next/headers";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { loadEnv } from "@aegis/types";
-import {
-  DEMO_USER_ID,
-  SESSION_COOKIE_NAME,
-  isDemoAuthDisabled,
-  issueSession,
-  verifyPassphrase,
-} from "@/lib/auth";
+import { verifyPassphrase, issueSession, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { apiOk, apiError } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 
 const BodySchema = z.object({
   passphrase: z.string().min(8).max(200),
 });
 
 export async function POST(req: Request) {
-  if (isDemoAuthDisabled()) {
-    return apiOk({ userId: DEMO_USER_ID, authDisabled: true });
+  // Rate-limit: 500 requests per 60s per IP (#60) — demo-loose; bypassed
+  // entirely when AEGIS_DEMO_MODE=true. Wiring stays on for telemetry.
+  const xff = req.headers.get("x-forwarded-for");
+  const ip = xff?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+
+  const rl = await rateLimit({ key: `login:ip:${ip}`, max: 500, windowSec: 60 });
+  if (!rl.ok) {
+    Sentry.captureException(new Error("rate-limited"), {
+      tags: { "aegis.ratelimited": "true" },
+      fingerprint: ["aegis-ratelimited", "login"],
+    });
+    return apiError({
+      status: 429,
+      error: "rate_limited",
+      message: "Too many login attempts. Retry later.",
+      headers: { "retry-after": String(rl.retryAfterSec) },
+    });
   }
 
   // Parse + validate body
@@ -60,26 +68,16 @@ export async function POST(req: Request) {
     return apiError({ status: 503, error: "internal", message: "Auth not configured" });
   }
 
-  const cookieValue = issueSession(DEMO_USER_ID, secret);
-  const forwardedProto = req.headers.get("x-forwarded-proto");
-  const requestProto = (() => {
-    try {
-      return new URL(req.url).protocol;
-    } catch {
-      return null;
-    }
-  })();
-  const shouldUseSecureCookie =
-    forwardedProto === "https" || requestProto === "https:";
+  const cookieValue = issueSession("operator", secret);
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, cookieValue, {
     httpOnly: true,
-    secure: shouldUseSecureCookie,
+    secure: true,
     sameSite: "lax",
     path: "/",
     maxAge: 7 * 86400,
   });
 
-  return apiOk({ userId: DEMO_USER_ID });
+  return apiOk({ userId: "operator" });
 }

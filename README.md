@@ -152,6 +152,30 @@ Never paste a raw secret into an issue, PR, or public channel. If a key was expo
 
 Set `DISCORD_WEBHOOK_URL` in `.env.local` to mirror blocked attacks into a Discord channel. See `.env.example` for the full OpenClaw / Supabase / pg-boss configuration if you want Phase-2 features.
 
+### Local dev with Docker Compose
+
+Full Phase-2 stack in one command (Next.js web + pg-boss worker + OpenClaw gateway + Postgres):
+
+```bash
+cd docker
+docker compose up --build
+```
+
+Services and ports:
+
+| Service              | Port   | Purpose                                   |
+|----------------------|--------|-------------------------------------------|
+| `aegis-web`          | 3000   | Next.js app                               |
+| `aegis-worker`       | —      | pg-boss consumer (approvals, cleanup)     |
+| `openclaw-gateway`   | 18789  | Runtime approval bridge                   |
+| `postgres`           | 5432   | Shared DB (Supabase + pg-boss + rate-limit) |
+
+Supabase migrations live under `supabase/migrations/` and apply through the Supabase CLI — pg-boss creates its own `pgboss` schema on first connect. Copy `docker/.env.example` → `docker/.env` and fill in `OPENCLAW_GATEWAY_TOKEN`, `AEGIS_SHARED_TOKEN`, and model keys before running.
+
+### Rate limiting (demo-loose by default)
+
+Sensitive endpoints (`/api/auth/login`, `/api/chat/stream`, `/api/approvals/*/decide`, `/api/sessions`) are guarded by a Postgres-backed leaky-bucket limiter in `src/lib/rate-limit.ts`. Demo-day defaults are intentionally high (500/3000/6000/2000 per 60s) and `AEGIS_DEMO_MODE=true` or `AEGIS_RATE_LIMIT_BYPASS=true` short-circuits the DB call entirely while keeping Sentry `aegis.ratelimited` telemetry wired. Hourly cleanup runs as a pg-boss cron in `aegis-worker` (`rate-limit.cleanup`).
+
 ---
 
 ## Architecture

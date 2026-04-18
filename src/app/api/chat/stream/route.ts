@@ -13,11 +13,16 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { streamText } from "ai";
 import type { ModelMessage } from "ai";
+import * as Sentry from "@sentry/nextjs";
 import { createHardening, extractPathsFromText } from "@aegis/hardening";
 import { withHardeningSpan, captureAegisBlock } from "@/lib/sentry";
 import { ChatStreamBodySchema, loadEnv } from "@aegis/types";
 import type { ChatUIMessage } from "@aegis/types";
 import { extractLastUserMessage, resolveModel } from "@/lib/chat-pipeline";
+import { rateLimit } from "@/lib/rate-limit";
+import { apiError } from "@/lib/api";
+import { cookies } from "next/headers";
+import { verifySession, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -68,6 +73,41 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  // ── 2a. Identify caller for rate-limiting ───────────────────────────────────
+  // cookies() can throw when called outside a Next.js request scope (e.g. in
+  // unit tests that invoke POST() directly). Treat that as anonymous and
+  // fall back to IP-based keying — the rate-limit still applies, just per-IP.
+  let userId: string | null = null;
+  try {
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const claim = verifySession(cookieValue);
+    userId = claim.valid ? claim.userId : null;
+  } catch {
+    userId = null;
+  }
+
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const rlKey = userId ? `chat:user:${userId}` : `chat:anon:${ip}`;
+
+  // ── 2b. Rate-limit check (3000 req / 60 s — demo-loose; AEGIS_DEMO_MODE bypasses entirely)
+  const rl = await rateLimit({ key: rlKey, max: 3000, windowSec: 60 });
+  if (!rl.ok) {
+    Sentry.captureException(new Error("rate-limited"), {
+      tags: { "aegis.ratelimited": "true" },
+      fingerprint: ["aegis-ratelimited", "chat.stream"],
+    });
+    return apiError({
+      status: 429,
+      error: "rate_limited",
+      message: "Too many requests.",
+      headers: { "retry-after": String(rl.retryAfterSec) },
+    });
   }
 
   // ── 3. Run hardening ────────────────────────────────────────────────────────

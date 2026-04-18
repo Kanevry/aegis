@@ -13,6 +13,7 @@ import { AEGIS_APPROVAL_ATTRS, approvalDenyFingerprint } from '@/lib/aegis-attrs
 import { captureAegisBlock } from '@/lib/sentry';
 import { apiOk, apiError } from '@/lib/api';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { resolveApproval } from '@/lib/openclaw-resolver';
 
 // ── Request body schema ───────────────────────────────────────────────────────
@@ -61,6 +62,21 @@ export async function POST(
 
   if (!claim.valid) {
     return apiError({ status: 401, error: 'unauthorized' });
+  }
+
+  // Rate-limit gate: 6000 decisions per user per 60s (demo-loose; AEGIS_DEMO_MODE bypasses)
+  const rl = await rateLimit({ key: `approval:user:${claim.userId}`, max: 6000, windowSec: 60 });
+  if (!rl.ok) {
+    Sentry.captureException(new Error('rate-limited'), {
+      tags: { 'aegis.ratelimited': 'true' },
+      fingerprint: ['aegis-ratelimited', 'approvals.decide'],
+    });
+    return apiError({
+      status: 429,
+      error: 'rate_limited',
+      message: 'Too many decisions. Slow down.',
+      headers: { 'retry-after': String(rl.retryAfterSec) },
+    });
   }
 
   // Parse and resolve route param

@@ -1,6 +1,23 @@
 name: aegis-openclaw
 
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis}
+      POSTGRES_DB: ${POSTGRES_DB:-aegis}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aegis}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   aegis-web:
     build:
       context: ..
@@ -12,7 +29,6 @@ services:
       NODE_ENV: production
       PORT: "3000"
       SKIP_ENV_VALIDATION: ${SKIP_ENV_VALIDATION:-false}
-      AEGIS_DEMO_DISABLE_AUTH: ${AEGIS_DEMO_DISABLE_AUTH:-true}
       AEGIS_SHARED_TOKEN: ${AEGIS_SHARED_TOKEN}
       AEGIS_WEB_BASE_URL: ${AEGIS_WEB_BASE_URL:-http://localhost:3000}
       AEGIS_EXPECTED_OPENCLAW_GATEWAY_URL: http://openclaw-gateway:${OPENCLAW_GATEWAY_PORT:-18789}
@@ -21,10 +37,30 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN:-}
-      AEGIS_SESSION_SECRET: ${AEGIS_SESSION_SECRET:-}
-      AEGIS_SESSION_PASSPHRASE_HASH: ${AEGIS_SESSION_PASSPHRASE_HASH:-}
+      DATABASE_URL: ${DATABASE_URL:-postgres://aegis:aegis@postgres:5432/aegis}
+      PGBOSS_SCHEMA: ${PGBOSS_SCHEMA:-pgboss}
     ports:
       - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  aegis-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    image: aegis-worker:local
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: ${DATABASE_URL:-postgres://aegis:aegis@postgres:5432/aegis}
+      PGBOSS_SCHEMA: ${PGBOSS_SCHEMA:-pgboss}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   openclaw-gateway:
     build:
@@ -62,3 +98,4 @@ services:
 
 volumes:
   openclaw-state:
+  postgres-data:

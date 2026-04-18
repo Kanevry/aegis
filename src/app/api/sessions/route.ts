@@ -2,10 +2,12 @@
 
 export const runtime = "nodejs";
 
+import * as Sentry from "@sentry/nextjs";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { SESSION_COOKIE_NAME, verifySession } from "@/lib/auth";
 import { apiOk, apiError } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 import { createSession, listSessions } from "@/lib/sessions";
 import { CreateSessionBodySchema, ListSessionsQuerySchema } from "@aegis/types";
 
@@ -52,6 +54,22 @@ export async function POST(req: Request) {
 
   if (!claim.valid) {
     return apiError({ status: 401, error: "unauthorized" });
+  }
+
+  const userId = claim.userId;
+  // 2000 session creations per 60s (demo-loose; AEGIS_DEMO_MODE bypasses)
+  const rl = await rateLimit({ key: `sessions:user:${userId}`, max: 2000, windowSec: 60 });
+  if (!rl.ok) {
+    Sentry.captureException(new Error("rate-limited"), {
+      tags: { "aegis.ratelimited": "true" },
+      fingerprint: ["aegis-ratelimited", "sessions"],
+    });
+    return apiError({
+      status: 429,
+      error: "rate_limited",
+      message: "Too many session creations.",
+      headers: { "retry-after": String(rl.retryAfterSec) },
+    });
   }
 
   let body: z.infer<typeof CreateSessionBodySchema>;
