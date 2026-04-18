@@ -62,12 +62,15 @@ cp .env.example .env.local
 #   OPENAI_API_KEY=sk-...
 #   NEXT_PUBLIC_SENTRY_DSN=https://...@o0.ingest.sentry.io/...
 #   SENTRY_AUTH_TOKEN=sntrys_...
+# Optional:
+#   ANTHROPIC_API_KEY=sk-ant-...   # only needed for Claude-based A/B comparison flows
 
 pnpm dev
 # App running at http://localhost:3000
 ```
 
 Optional event fan-out to Discord — see `.env.example` for `DISCORD_WEBHOOK_URL`.
+Anthropic support is optional and is only used for Claude-based A/B testing and provider comparison views; the default agent flow runs on OpenAI.
 
 ---
 
