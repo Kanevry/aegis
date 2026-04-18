@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@aegis/hardening": "workspace:*",
+    "@aegis/sandbox": "workspace:*",
     "@aegis/types": "workspace:*",
     "@ai-sdk/anthropic": "^2.0.0",
     "@ai-sdk/openai": "^2.0.0",

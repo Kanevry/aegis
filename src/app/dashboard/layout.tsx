@@ -9,6 +9,7 @@ import {
   GitBranch,
   GitCompareArrows,
   LayoutDashboard,
+  ShieldCheck,
   Zap,
 } from 'lucide-react';
 import { Sidebar, SidebarNav, SidebarNavItem } from '@/components/ui/sidebar';
@@ -17,6 +18,7 @@ const navItems: { href: Route; icon: React.ReactNode; label: string; exact?: boo
   { href: '/dashboard' as Route, icon: <LayoutDashboard size={16} />, label: 'Overview', exact: true },
   { href: '/dashboard/testbed' as Route, icon: <Zap size={16} />, label: 'Testbed' },
   { href: '/dashboard/flow' as Route, icon: <GitBranch size={16} />, label: 'Flow' },
+  { href: '/dashboard/sandbox' as Route, icon: <ShieldCheck size={16} />, label: 'Sandbox' },
   { href: '/dashboard/compare' as Route, icon: <GitCompareArrows size={16} />, label: 'Compare' },
   { href: '/dashboard/eval' as Route, icon: <Grid2X2Check size={16} />, label: 'Eval' },
 ];
