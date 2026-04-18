@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { createHardening } from '@aegis/hardening';
+import { createHardening, extractPathsFromText } from '@aegis/hardening';
 import { getAttackById } from '@/lib/attacks';
 import { withHardeningSpan, captureAegisBlock } from '@/lib/sentry';
 
@@ -49,9 +49,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Hardening — pass prompt as a path so B1 catches traversal sequences
+  // Hardening — extract real path candidates from the prompt so B1 catches traversal sequences
   const hardening = createHardening();
-  const result = hardening.run({ prompt: body.prompt, paths: [body.prompt] });
+  const extractedPaths = extractPathsFromText(body.prompt);
+  const result = hardening.run({ prompt: body.prompt, paths: extractedPaths });
   const stablePatternId = body.patternId ? getAttackById(body.patternId)?.id : undefined;
 
   // Sentry span with aegis.* attributes — delegates to withHardeningSpan for clean attribute wiring

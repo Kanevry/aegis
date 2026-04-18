@@ -1,7 +1,7 @@
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { createHardening } from '@aegis/hardening';
+import { createHardening, extractPathsFromText } from '@aegis/hardening';
 import { ATTACK_LIBRARY, getAttackById } from '@/lib/attacks';
 import type {
   CompareBatchResponse,
@@ -59,7 +59,7 @@ async function runSingleVariant(
 ): Promise<CompareVariant> {
   const hardeningResult = createVariantHardening(hardening).run({
     prompt,
-    paths: [prompt],
+    paths: extractPathsFromText(prompt),
   });
   const variantId = toVariantId(provider, hardening);
   const startedAt = Date.now();
@@ -132,7 +132,7 @@ function matrixVariant(
 ): CompareVariant {
   const result = createVariantHardening(hardening).run({
     prompt,
-    paths: [prompt],
+    paths: extractPathsFromText(prompt),
   });
 
   return {
