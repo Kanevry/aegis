@@ -5,9 +5,23 @@ import {
   type SandboxExecResult,
   type SandboxOptions,
 } from './types';
+import { withSandboxSpan } from './sentry';
 
 export type { EgressBlock, Sandbox, SandboxExecResult, SandboxOptions };
 export { SandboxOptionsSchema };
+
+export {
+  SandboxSpanAttributesSchema,
+  SANDBOX_EGRESS_FINGERPRINT,
+} from './contract';
+export type { SandboxSpanAttributes, SandboxEgressFingerprint } from './contract';
+
+export {
+  AegisSandboxEgressBlocked,
+  withSandboxSpan,
+  __resetSentryCacheForTests,
+} from './sentry';
+export type { WithSandboxSpanContext } from './sentry';
 
 // Minimal shape we require from @earendil-works/gondolin at runtime.
 // Declared locally so we never import the package statically.
@@ -40,10 +54,19 @@ interface GondolinModule {
   };
 }
 
-function makeFallbackSandbox(fallbackReason: string): Sandbox {
+function makeFallbackSandbox(
+  fallbackReason: string,
+  sentryCtx: { enabled: boolean; vmBackend: 'qemu' | 'krun' | 'fallback'; scenario: string },
+): Sandbox {
   return {
+    /**
+     * Returns a result representing unavailability. When opts.sentry.enabled is
+     * true, each call is still wrapped in `withSandboxSpan` so Sentry receives
+     * an `aegis.sandbox.exec` span with `aegis.sandbox.available: false` — the
+     * fallback path is fully observable.
+     */
     async exec(_command: string): Promise<SandboxExecResult> {
-      return {
+      return withSandboxSpan(sentryCtx, async () => ({
         available: false,
         exitCode: -1,
         stdout: '',
@@ -52,7 +75,7 @@ function makeFallbackSandbox(fallbackReason: string): Sandbox {
         secretsInjected: 0,
         coldStartMs: 0,
         fallbackReason,
-      };
+      }));
     },
     async close(): Promise<void> {
       // no-op: nothing to tear down in fallback mode
@@ -68,11 +91,27 @@ function makeFallbackSandbox(fallbackReason: string): Sandbox {
  * function returns a fallback Sandbox whose exec always resolves with
  * { available: false }.
  *
+ * Sentry observability: when opts.sentry.enabled === true, every exec call
+ * emits an `aegis.sandbox.exec` Sentry span containing the full set of
+ * SandboxSpanAttributes contract attributes (vm_backend, scenario, exit_code,
+ * egress_blocks, etc.). Every egress block additionally fires
+ * `Sentry.captureException(AegisSandboxEgressBlocked)` with a stable
+ * fingerprint so Seer groups recurring exfil attempts by (host × reason).
+ * This instrumentation applies to both the real VM path and the fallback path,
+ * so observability is preserved even when gondolin is unavailable on Vercel.
+ *
  * Install gondolin separately when running on a Linux host with QEMU:
  *   pnpm add @earendil-works/gondolin
  */
 export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
   const validated = SandboxOptionsSchema.parse(opts);
+
+  // Sentry context shared across all exec calls for this sandbox instance.
+  const sentryCtx = {
+    enabled: validated.sentry?.enabled === true,
+    vmBackend: (validated.vmBackend ?? 'qemu') as 'qemu' | 'krun' | 'fallback',
+    scenario: 'exec',
+  };
 
   let gondolin: GondolinModule;
 
@@ -86,7 +125,7 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
       err instanceof Error
         ? `gondolin unavailable: ${err.message}`
         : 'gondolin unavailable: import failed';
-    return makeFallbackSandbox(reason);
+    return makeFallbackSandbox(reason, sentryCtx);
   }
 
   let vm: GondolinVm;
@@ -134,7 +173,7 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
       err instanceof Error
         ? `VM init failed: ${err.message}`
         : 'VM init failed: unknown error';
-    return makeFallbackSandbox(reason);
+    return makeFallbackSandbox(reason, sentryCtx);
   }
 
   const coldStartMs = Date.now() - coldStartStart;
@@ -143,36 +182,44 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
     : 0;
 
   return {
+    /**
+     * Executes `command` inside the microVM. When opts.sentry.enabled is true,
+     * the call is wrapped in `withSandboxSpan` which emits an
+     * `aegis.sandbox.exec` span and captures any egress blocks via
+     * `Sentry.captureException`.
+     */
     async exec(command: string): Promise<SandboxExecResult> {
       // Reset egress blocks per exec call so each result reflects only
       // the network activity of that individual command.
       egressBlocks.length = 0;
 
-      try {
-        const result = await vm.exec(command);
-        return {
-          available: true,
-          exitCode: result.exitCode,
-          stdout: result.stdout,
-          stderr: result.stderr,
-          egressBlocks: [...egressBlocks],
-          secretsInjected,
-          coldStartMs,
-        };
-      } catch (err) {
-        const reason =
-          err instanceof Error ? `exec failed: ${err.message}` : 'exec failed';
-        return {
-          available: false,
-          exitCode: -1,
-          stdout: '',
-          stderr: '',
-          egressBlocks: [...egressBlocks],
-          secretsInjected,
-          coldStartMs,
-          fallbackReason: reason,
-        };
-      }
+      return withSandboxSpan(sentryCtx, async () => {
+        try {
+          const result = await vm.exec(command);
+          return {
+            available: true,
+            exitCode: result.exitCode,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            egressBlocks: [...egressBlocks],
+            secretsInjected,
+            coldStartMs,
+          };
+        } catch (err) {
+          const reason =
+            err instanceof Error ? `exec failed: ${err.message}` : 'exec failed';
+          return {
+            available: false,
+            exitCode: -1,
+            stdout: '',
+            stderr: '',
+            egressBlocks: [...egressBlocks],
+            secretsInjected,
+            coldStartMs,
+            fallbackReason: reason,
+          };
+        }
+      });
     },
 
     async close(): Promise<void> {

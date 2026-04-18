@@ -4,6 +4,7 @@ export interface SandboxOptions {
   allowedHosts: string[];
   secrets?: Record<string, { hosts: string[]; value: string }>;
   vmBackend?: 'qemu' | 'krun';
+  sentry?: { enabled: boolean };
 }
 
 export interface EgressBlock {
@@ -36,4 +37,5 @@ export const SandboxOptionsSchema = z.object({
     value: z.string(),
   })).optional(),
   vmBackend: z.enum(['qemu', 'krun']).optional(),
+  sentry: z.object({ enabled: z.boolean() }).optional(),
 });
