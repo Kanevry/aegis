@@ -98,6 +98,15 @@ sequenceDiagram
     DEC-->>UI: safe explanation envelope
 ```
 
+## Model ids
+
+| Provider | Model id | Used by |
+|---|---|---|
+| OpenAI | `gpt-4o-mini` | default `/api/agent/run`, A/B compare |
+| Anthropic | `claude-haiku-4-5-20251001` | `/api/agent/run?provider=anthropic`, A/B compare |
+
+Both are defined in `src/app/api/agent/run/route.ts` and `src/lib/compare-service.ts`. When a vendor rotates a model alias, update both files and the stack line in `README.md` together so the compare endpoint and the public stack description do not drift apart.
+
 ## 5. Observability
 
 Observability is not a side effect. Every chat turn and approval step should carry stable attributes so Discover, Replay, and Seer all speak the same language. The issue cluster is [#52](https://github.com/Kanevry/aegis/issues/52), [#53](https://github.com/Kanevry/aegis/issues/53), [#54](https://github.com/Kanevry/aegis/issues/54), [#55](https://github.com/Kanevry/aegis/issues/55), [#56](https://github.com/Kanevry/aegis/issues/56), and [#57](https://github.com/Kanevry/aegis/issues/57).

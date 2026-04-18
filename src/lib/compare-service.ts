@@ -40,8 +40,8 @@ function createVariantHardening(hardening: boolean) {
 function modelFor(provider: CompareProvider) {
   if (provider === 'anthropic') {
     return {
-      model: anthropic('claude-3-5-sonnet-latest'),
-      label: 'claude-3-5-sonnet-latest',
+      model: anthropic('claude-haiku-4-5-20251001'),
+      label: 'claude-haiku-4-5-20251001',
     };
   }
 
@@ -80,7 +80,7 @@ async function runSingleVariant(
           reason: hardeningResult.reason ?? 'Blocked by Ægis hardening',
           response: '',
           latencyMs: Date.now() - startedAt,
-          model: provider === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini',
+          model: provider === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini',
         };
       }
 
@@ -114,7 +114,7 @@ async function runSingleVariant(
           reason: 'Provider invocation failed unexpectedly',
           response: '',
           latencyMs: Date.now() - startedAt,
-          model: provider === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini',
+          model: provider === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini',
         };
       }
     },
@@ -145,7 +145,7 @@ function matrixVariant(
     reason: result.reason ?? (result.allowed ? 'Allowed' : 'Blocked'),
     response: '',
     latencyMs: 0,
-    model: provider === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini',
+    model: provider === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini',
   };
 }
 
