@@ -7,6 +7,14 @@
       mode: "token",
       token: "${OPENCLAW_GATEWAY_TOKEN}",
     },
+    controlUi: {
+      allowedOrigins: [
+        "http://localhost:3000",
+        "http://aegis-web:3000",
+      ],
+      dangerouslyDisableDeviceAuth: true,
+      allowInsecureAuth: true,
+    },
     reload: { mode: "off" },
   },
 

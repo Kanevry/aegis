@@ -294,8 +294,12 @@ function resolveOpenclawGatewayConfig() {
     process.env["OPENCLAW_GATEWAY_TOKEN"] ||
     process.env["OPENCLAW_API_TOKEN"] ||
     "";
+  const origin =
+    process.env["AEGIS_WEB_BASE_URL"] ||
+    process.env["NEXT_PUBLIC_APP_URL"] ||
+    "http://localhost:3000";
 
-  return { baseURL, apiToken };
+  return { baseURL, apiToken, origin };
 }
 
 function toGatewayWsUrl(baseURL: string) {
@@ -313,12 +317,12 @@ function toGatewayWsUrl(baseURL: string) {
 
 function resolveConnectClientInfo() {
   return {
-    id: "gateway-client",
+    id: "openclaw-control-ui",
     displayName: "Ægis Runtime Bridge",
     version: process.env["npm_package_version"] ?? "0.1.0",
-    platform: process.platform,
-    mode: "backend",
-    deviceFamily: "server",
+    platform: "web",
+    mode: "webchat",
+    deviceFamily: "browser",
     instanceId: "aegis-runtime-bridge",
   };
 }
@@ -430,7 +434,7 @@ function scheduleBridgeReconnect() {
   }
   state.reconnectTimer = setTimeout(() => {
     state.reconnectTimer = null;
-    void ensureOpenclawRuntimeBridgeStarted();
+    void ensureOpenclawRuntimeBridgeStarted().catch(() => undefined);
   }, WS_RECONNECT_DELAY_MS);
   state.reconnectTimer.unref?.();
 }
@@ -576,7 +580,7 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
     return await state.connectPromise;
   }
 
-  const { apiToken, baseURL } = resolveOpenclawGatewayConfig();
+  const { apiToken, baseURL, origin } = resolveOpenclawGatewayConfig();
   if (!apiToken) {
     throw new Error("OpenClaw gateway token is not configured for bridge startup");
   }
@@ -589,7 +593,11 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
   void state.connectPromise.catch(() => undefined);
 
   const wsUrl = toGatewayWsUrl(baseURL);
-  const socket = new WebSocket(wsUrl);
+  const socket = new WebSocket(wsUrl, {
+    headers: {
+      origin,
+    },
+  });
   state.socket = socket;
 
   const timeout = setTimeout(() => {
