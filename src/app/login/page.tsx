@@ -27,8 +27,7 @@ export default function LoginPage() {
 
       if (res.ok) {
         const next = searchParams.get("next");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        router.push((next ?? "/dashboard/chat") as any);
+        router.push((next ?? "/dashboard/chat") as Parameters<typeof router.push>[0]);
       } else if (res.status === 401) {
         setShake(true);
         setTimeout(() => setShake(false), 600);
