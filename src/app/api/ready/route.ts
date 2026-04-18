@@ -29,6 +29,28 @@ interface CheckFailed {
 
 type CheckResult = CheckOk | CheckSkipped | CheckFailed;
 
+function classifyFetchError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("failed to fetch")
+  ) {
+    return "dns/econnrefused";
+  }
+
+  if (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("abort")
+  ) {
+    return "timeout";
+  }
+
+  return "network_error";
+}
+
 // ── Dependency checks ─────────────────────────────────────────────────────────
 
 async function checkSupabase(): Promise<CheckResult> {
@@ -60,9 +82,7 @@ async function checkSupabase(): Promise<CheckResult> {
     return { ok: false, latency_ms, reason: `HTTP ${res.status}` };
   } catch (err) {
     const latency_ms = Date.now() - start;
-    const reason =
-      err instanceof Error ? err.message : "unknown error";
-    return { ok: false, latency_ms, reason };
+    return { ok: false, latency_ms, reason: classifyFetchError(err) };
   }
 }
 
@@ -86,14 +106,7 @@ async function checkOpenclaw(): Promise<CheckResult> {
     return { ok: false, latency_ms, reason: `HTTP ${res.status}` };
   } catch (err) {
     const latency_ms = Date.now() - start;
-    const msg = err instanceof Error ? err.message : "unknown error";
-    const reason =
-      msg.toLowerCase().includes("econnrefused") ||
-      msg.toLowerCase().includes("enotfound") ||
-      msg.toLowerCase().includes("failed to fetch")
-        ? "dns/econnrefused"
-        : msg;
-    return { ok: false, latency_ms, reason };
+    return { ok: false, latency_ms, reason: classifyFetchError(err) };
   }
 }
 
