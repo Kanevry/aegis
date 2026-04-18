@@ -95,19 +95,21 @@ export default function SandboxPageClient() {
       {/* Hero */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-300">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">
             <ShieldCheck size={16} />
           </span>
           <div>
-            <h1 className="text-xl font-semibold text-neutral-100">B6 Sandbox Execution Layer</h1>
-            <p className="text-sm text-neutral-500">
+            <h1 className="text-xl font-semibold text-neutral-950 dark:text-neutral-100">
+              B6 Sandbox Execution Layer
+            </h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-500">
               microVM runtime isolation — Phase 3 preview
             </p>
           </div>
         </div>
 
         {error ? (
-          <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-200">
             <AlertTriangle size={16} />
             <span>{error}</span>
           </div>
@@ -115,7 +117,7 @@ export default function SandboxPageClient() {
       </div>
 
       {/* Scenario selector + CTA */}
-      <Card className="border-neutral-800 bg-neutral-900/80">
+      <Card className="border-neutral-200 bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/80">
         <CardHeader>
           <CardTitle>Scenario</CardTitle>
           <CardDescription>
@@ -135,11 +137,15 @@ export default function SandboxPageClient() {
                     'rounded-xl border p-4 text-left transition-all outline-none',
                     isSelected
                       ? 'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_0_1px_rgba(99,102,241,0.2)]'
-                      : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700 hover:bg-neutral-900',
+                      : 'border-neutral-200 bg-white/70 hover:border-neutral-300 hover:bg-white dark:border-neutral-800 dark:bg-neutral-950/40 dark:hover:border-neutral-700 dark:hover:bg-neutral-900',
                   ].join(' ')}
                 >
-                  <p className="text-sm font-semibold text-neutral-100">{scenario.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-neutral-400">{scenario.description}</p>
+                  <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-100">
+                    {scenario.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-400">
+                    {scenario.description}
+                  </p>
                 </button>
               );
             })}
@@ -161,20 +167,22 @@ export default function SandboxPageClient() {
       {result ? (
         <div className="space-y-4">
           {/* Availability + fallback */}
-          <div className="flex flex-wrap items-center gap-3">
-            {availabilityBadge}
-            {result.fallbackReason ? (
-              <span className="text-xs text-neutral-500">{result.fallbackReason}</span>
-            ) : null}
-            {result.sentryIssueUrl ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {availabilityBadge}
+              {result.fallbackReason ? (
+                <span className="text-xs text-neutral-500 dark:text-neutral-500">
+                  {result.fallbackReason}
+                </span>
+              ) : null}
+              {result.sentryIssueUrl ? (
               <a
-                href={result.sentryIssueUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-indigo-400 transition-colors hover:text-indigo-300"
-              >
-                <ExternalLink size={12} />
-                View in Sentry
+                  href={result.sentryIssueUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-indigo-600 transition-colors hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                  <ExternalLink size={12} />
+                  View in Sentry
               </a>
             ) : null}
           </div>
@@ -182,7 +190,7 @@ export default function SandboxPageClient() {
           {/* stdout / egress columns */}
           <div className="grid gap-4 xl:grid-cols-2">
             {/* stdout / stderr */}
-            <Card className="border-neutral-800 bg-neutral-900/80">
+            <Card className="border-neutral-200 bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/80">
               <CardHeader>
                 <CardTitle className="text-sm">Runtime output</CardTitle>
                 <CardDescription>
@@ -191,15 +199,19 @@ export default function SandboxPageClient() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="mb-1 text-xs uppercase tracking-widest text-neutral-500">stdout</p>
-                  <pre className="max-h-48 overflow-auto rounded-lg border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs leading-5 text-neutral-300 whitespace-pre-wrap">
+                  <p className="mb-1 text-xs uppercase tracking-widest text-neutral-500 dark:text-neutral-500">
+                    stdout
+                  </p>
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-200 bg-neutral-50 p-3 font-mono text-xs leading-5 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300">
                     {result.result.stdout || '(empty)'}
                   </pre>
                 </div>
                 {result.result.stderr ? (
                   <div>
-                    <p className="mb-1 text-xs uppercase tracking-widest text-neutral-500">stderr</p>
-                    <pre className="max-h-32 overflow-auto rounded-lg border border-red-900/40 bg-red-950/20 p-3 font-mono text-xs leading-5 text-red-300 whitespace-pre-wrap">
+                    <p className="mb-1 text-xs uppercase tracking-widest text-neutral-500 dark:text-neutral-500">
+                      stderr
+                    </p>
+                    <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-lg border border-red-500/30 bg-red-500/10 p-3 font-mono text-xs leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
                       {result.result.stderr}
                     </pre>
                   </div>
@@ -208,10 +220,10 @@ export default function SandboxPageClient() {
             </Card>
 
             {/* Egress blocks */}
-            <Card className="border-neutral-800 bg-neutral-900/80">
+            <Card className="border-neutral-200 bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/80">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <ShieldOff size={16} className="text-red-400" />
+                  <ShieldOff size={16} className="text-red-600 dark:text-red-400" />
                   <CardTitle className="text-sm">
                     Egress blocks
                     {result.egressBlocks.length > 0 ? (
@@ -229,35 +241,43 @@ export default function SandboxPageClient() {
                     {result.egressBlocks.map((block, index) => (
                       <li
                         key={index}
-                        className="rounded-lg border border-red-900/40 bg-red-950/20 p-3 space-y-1"
+                        className="space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 p-3 dark:border-red-900/40 dark:bg-red-950/20"
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="destructive">{block.method}</Badge>
-                          <span className="font-mono text-xs text-red-300">{block.host}</span>
-                          <span className="ml-auto text-xs text-neutral-500">
+                          <span className="font-mono text-xs text-red-700 dark:text-red-300">
+                            {block.host}
+                          </span>
+                          <span className="ml-auto text-xs text-neutral-500 dark:text-neutral-500">
                             {formatTimestamp(block.timestamp)}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-400">{block.reason}</p>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                          {block.reason}
+                        </p>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-neutral-500">No egress blocked.</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-500">
+                    No egress blocked.
+                  </p>
                 )}
               </CardContent>
             </Card>
           </div>
 
           {/* Span attributes */}
-          <Card className="border-neutral-800 bg-neutral-900/80">
+          <Card className="border-neutral-200 bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/80">
             <CardHeader>
               <CardTitle className="text-sm">Span attributes</CardTitle>
               <CardDescription>
                 {result.span.traceId ? (
                   <>
                     Trace:{' '}
-                    <span className="font-mono text-xs text-neutral-300">{result.span.traceId}</span>
+                    <span className="font-mono text-xs text-neutral-700 dark:text-neutral-300">
+                      {result.span.traceId}
+                    </span>
                   </>
                 ) : (
                   'No active trace'
@@ -269,19 +289,21 @@ export default function SandboxPageClient() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
-                      <th className="pb-2 text-left text-xs uppercase tracking-widest text-neutral-500">
+                      <th className="pb-2 text-left text-xs uppercase tracking-widest text-neutral-500 dark:text-neutral-500">
                         Key
                       </th>
-                      <th className="pb-2 text-left text-xs uppercase tracking-widest text-neutral-500">
+                      <th className="pb-2 text-left text-xs uppercase tracking-widest text-neutral-500 dark:text-neutral-500">
                         Value
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800">
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
                     {Object.entries(result.span.attributes).map(([key, value]) => (
                       <tr key={key}>
-                        <td className="py-2 pr-4 font-mono text-xs text-neutral-400">{key}</td>
-                        <td className="py-2 font-mono text-xs text-neutral-200">
+                        <td className="py-2 pr-4 font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                          {key}
+                        </td>
+                        <td className="py-2 font-mono text-xs text-neutral-700 dark:text-neutral-200">
                           {String(value)}
                         </td>
                       </tr>
@@ -289,7 +311,9 @@ export default function SandboxPageClient() {
                   </tbody>
                 </table>
               ) : (
-                <p className="text-sm text-neutral-500">No span attributes recorded.</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-500">
+                  No span attributes recorded.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -297,13 +321,13 @@ export default function SandboxPageClient() {
       ) : null}
 
       {/* Footer */}
-      <p className="text-xs text-neutral-600">
+      <p className="text-xs text-neutral-600 dark:text-neutral-600">
         Phase 3 preview — microVM sandbox powered by{' '}
         <a
           href="https://github.com/earendil-works/gondolin"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-500 underline-offset-2 hover:text-neutral-400 hover:underline"
+          className="text-neutral-700 underline-offset-2 hover:text-neutral-950 hover:underline dark:text-neutral-500 dark:hover:text-neutral-300"
         >
           Gondolin (earendil-works)
         </a>
@@ -312,7 +336,7 @@ export default function SandboxPageClient() {
           href="https://github.com/Kanevry/aegis/issues/90"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-500 underline-offset-2 hover:text-neutral-400 hover:underline"
+          className="text-neutral-700 underline-offset-2 hover:text-neutral-950 hover:underline dark:text-neutral-500 dark:hover:text-neutral-300"
         >
           Epic #90
         </a>

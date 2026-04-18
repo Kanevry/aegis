@@ -27,21 +27,25 @@ export default function DashboardOverviewPage() {
   return (
     <section>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-neutral-100">Overview</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h1 className="text-xl font-semibold text-neutral-950 dark:text-neutral-100">Overview</h1>
+        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-500">
           Live data arrives when /api/agent/run receives its first request.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {statCards.map((card) => (
           <Card key={card.title}>
             <CardHeader>
               <CardTitle>{card.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-neutral-100">{card.value}</p>
-              <p className="mt-1 text-xs text-neutral-500">{card.description}</p>
+              <p className="text-3xl font-bold text-neutral-950 dark:text-neutral-100">
+                {card.value}
+              </p>
+              <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-500">
+                {card.description}
+              </p>
             </CardContent>
           </Card>
         ))}

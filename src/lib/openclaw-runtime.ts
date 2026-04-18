@@ -669,7 +669,7 @@ async function callGatewayRpc<T = unknown>(method: string, params: unknown): Pro
   }
 
   const id = randomUUID();
-  const result = new Promise<T>((resolve, reject) => {
+  const result = new Promise<unknown>((resolve, reject) => {
     const timeout = setTimeout(() => {
       state.pendingRpc.delete(id);
       reject(new Error(`OpenClaw RPC timed out: ${method}`));
@@ -687,7 +687,7 @@ async function callGatewayRpc<T = unknown>(method: string, params: unknown): Pro
     }),
   );
 
-  return await result;
+  return (await result) as T;
 }
 
 function toStoredStatus(decision: RuntimeApprovalDecision): RuntimeApprovalRecord["status"] {

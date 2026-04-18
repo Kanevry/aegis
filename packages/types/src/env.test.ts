@@ -47,8 +47,17 @@ describe("loadEnv", () => {
     expect(env.AEGIS_LAYER_B5_REDACTION).toBe(true);
     expect(env.AEGIS_DEMO_MODE).toBe(false);
     expect(env.NEXT_PUBLIC_SENTRY_ENABLED).toBe(true);
-    expect(env.AEGIS_SENTRY_FEEDBACK_WIDGET).toBe(true);
+    expect(env.NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET).toBe(true);
     expect(env.SKIP_ENV_VALIDATION).toBe(false);
+  });
+
+  it("accepts the legacy feedback widget flag and maps it to the public key", () => {
+    const env = loadEnv({
+      ...VALID_ENV,
+      AEGIS_SENTRY_FEEDBACK_WIDGET: "false",
+    });
+
+    expect(env.NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET).toBe(false);
   });
 
   it("isDemoMode returns true when AEGIS_DEMO_MODE=true", () => {

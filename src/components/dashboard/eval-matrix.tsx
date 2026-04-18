@@ -73,12 +73,14 @@ export function EvalMatrix({ initialRows }: EvalMatrixProps) {
     <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-xl font-semibold text-neutral-100">Eval matrix</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="text-xl font-semibold text-neutral-950 dark:text-neutral-100">
+            Eval matrix
+          </h1>
+          <p className="text-sm text-neutral-600 dark:text-neutral-500">
             Green means the live hardening result matched the seeded attack expectation.
           </p>
           {error ? (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-200">
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
@@ -91,7 +93,7 @@ export function EvalMatrix({ initialRows }: EvalMatrixProps) {
         </Button>
       </div>
 
-      <Card className="border-neutral-800 bg-neutral-900/80">
+      <Card className="border-neutral-200 bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/80">
         <CardHeader>
           <CardTitle>Pass / Fail matrix</CardTitle>
           <CardDescription>
@@ -120,10 +122,14 @@ export function EvalMatrix({ initialRows }: EvalMatrixProps) {
                   <TableRow key={row.attackId}>
                     <TableCell>
                       <div className="space-y-1">
-                        <p className="font-medium text-neutral-100">{row.title}</p>
+                        <p className="font-medium text-neutral-950 dark:text-neutral-100">
+                          {row.title}
+                        </p>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{row.category}</Badge>
-                          <span className="text-xs text-neutral-500">{row.attackId}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-500">
+                            {row.attackId}
+                          </span>
                         </div>
                       </div>
                     </TableCell>
@@ -140,19 +146,19 @@ export function EvalMatrix({ initialRows }: EvalMatrixProps) {
                     })}
 
                     <TableCell>
-                      <div className="flex items-center gap-2 text-sm text-neutral-300">
+                      <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                         {hardeningOn?.outcome === 'blocked' ? (
-                          <ShieldCheck size={14} className="text-emerald-300" />
+                          <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-300" />
                         ) : (
-                          <ShieldX size={14} className="text-red-300" />
+                          <ShieldX size={14} className="text-red-600 dark:text-red-300" />
                         )}
                         <span>{hardeningOn?.outcome ?? 'pending'}</span>
                       </div>
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex items-center gap-2 text-sm text-neutral-300">
-                        <ShieldCheck size={14} className="text-indigo-300" />
+                      <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                        <ShieldCheck size={14} className="text-indigo-600 dark:text-indigo-300" />
                         <span>{hardeningOff?.outcome ?? 'pending'}</span>
                       </div>
                     </TableCell>

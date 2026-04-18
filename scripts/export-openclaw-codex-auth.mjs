@@ -13,6 +13,10 @@ const DEFAULT_SEED_DIR = path.resolve(
 );
 const DEFAULT_PROFILE_ID = "openai-codex:default";
 
+function log(message) {
+  process.stdout.write(`${message}\n`);
+}
+
 function usage() {
   console.error(
     "Usage: node scripts/export-openclaw-codex-auth.mjs [--source PATH] [--agent-dir PATH] [--profile-id ID]",
@@ -135,10 +139,10 @@ async function main() {
   await fs.writeFile(authStorePath, `${JSON.stringify(authStore, null, 2)}\n`, { mode: 0o600 });
   await fs.writeFile(authJsonPath, `${JSON.stringify(legacyAuthJson, null, 2)}\n`, { mode: 0o600 });
 
-  console.log(`Exported OpenClaw Codex auth seed to ${agentDir}`);
-  console.log(`- source: ${source}`);
-  console.log(`- profile: ${profileId}`);
-  console.log(`- files: auth-profiles.json, auth.json`);
+  log(`Exported OpenClaw Codex auth seed to ${agentDir}`);
+  log(`- source: ${source}`);
+  log(`- profile: ${profileId}`);
+  log(`- files: auth-profiles.json, auth.json`);
 }
 
 main().catch((error) => {

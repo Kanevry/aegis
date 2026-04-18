@@ -5,6 +5,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, readEnvFile, resolveDockerEnvFile } from "./docker-openclaw-env.mjs";
 
+function log(message) {
+  process.stdout.write(`${message}\n`);
+}
+
 const envFile = resolveDockerEnvFile();
 const envValues = {
   ...readEnvFile(envFile),
@@ -19,7 +23,7 @@ if (!token) {
 
 const openclawDir = path.resolve(ROOT_DIR, "..", "3rd-party-repos", "openclaw");
 
-console.log(`Using ${path.relative(ROOT_DIR, envFile)} for OpenClaw TUI`);
+log(`Using ${path.relative(ROOT_DIR, envFile)} for OpenClaw TUI`);
 
 function runOrThrow(command, args, options) {
   const result = spawnSync(command, args, options);
@@ -47,7 +51,7 @@ const tuiEnv = {
 };
 
 if (!fs.existsSync(path.join(openclawDir, "node_modules"))) {
-  console.log("OpenClaw dependencies are missing; running pnpm install first");
+  log("OpenClaw dependencies are missing; running pnpm install first");
   runOrThrow("pnpm", ["install"], {
     cwd: openclawDir,
     stdio: "inherit",
@@ -65,7 +69,7 @@ if ((localResult.status ?? 1) === 0) {
   process.exit(0);
 }
 
-console.log("Local OpenClaw source TUI failed; falling back to published openclaw CLI");
+log("Local OpenClaw source TUI failed; falling back to published openclaw CLI");
 
 runOrThrow("npx", ["--yes", "openclaw@latest", "tui", ...tuiArgs], {
   cwd: ROOT_DIR,

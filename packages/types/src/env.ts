@@ -60,7 +60,7 @@ export const AegisEnvSchema = z.object({
   SENTRY_ORG: z.string().optional(),
   SENTRY_PROJECT: z.string().optional(),
   NEXT_PUBLIC_SENTRY_ENABLED: coercedBool(true),
-  AEGIS_SENTRY_FEEDBACK_WIDGET: coercedBool(true),
+  NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET: coercedBool(true),
 
   // ── Ægis hardening master switch ──────────────────────────────────────────
   AEGIS_HARDENING_ENABLED: coercedBool(true),
@@ -116,53 +116,74 @@ export type AegisEnv = z.infer<typeof AegisEnvSchema>;
 export function loadEnv(
   source: Record<string, string | undefined> = process.env
 ): AegisEnv {
+  const normalizedSource =
+    source["NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET"] === undefined &&
+    source["AEGIS_SENTRY_FEEDBACK_WIDGET"] !== undefined
+      ? {
+          ...source,
+          NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET:
+            source["AEGIS_SENTRY_FEEDBACK_WIDGET"],
+        }
+      : source;
+
   // Fast-path: if SKIP_ENV_VALIDATION is set, return defaults merged with raw env
-  const skipRaw = source["SKIP_ENV_VALIDATION"];
+  const skipRaw = normalizedSource["SKIP_ENV_VALIDATION"];
   if (skipRaw === "true" || skipRaw === "1") {
     // Return a permissive object — required fields get placeholder-safe defaults.
     const permissive = {
       SKIP_ENV_VALIDATION: true,
-      NODE_ENV: source["NODE_ENV"] ?? "development",
-      PORT: source["PORT"] ? Number(source["PORT"]) : 3000,
-      NEXT_PUBLIC_APP_URL: source["NEXT_PUBLIC_APP_URL"],
-      OPENAI_API_KEY: source["OPENAI_API_KEY"] ?? "sk-skip-validation-placeholder",
-      ANTHROPIC_API_KEY: source["ANTHROPIC_API_KEY"],
+      NODE_ENV: normalizedSource["NODE_ENV"] ?? "development",
+      PORT: normalizedSource["PORT"] ? Number(normalizedSource["PORT"]) : 3000,
+      NEXT_PUBLIC_APP_URL: normalizedSource["NEXT_PUBLIC_APP_URL"],
+      OPENAI_API_KEY:
+        normalizedSource["OPENAI_API_KEY"] ?? "sk-skip-validation-placeholder",
+      ANTHROPIC_API_KEY: normalizedSource["ANTHROPIC_API_KEY"],
       NEXT_PUBLIC_SENTRY_DSN:
-        source["NEXT_PUBLIC_SENTRY_DSN"] ??
+        normalizedSource["NEXT_PUBLIC_SENTRY_DSN"] ??
         "https://placeholder@o0.ingest.sentry.io/0",
-      SENTRY_DSN: source["SENTRY_DSN"],
-      SENTRY_AUTH_TOKEN: source["SENTRY_AUTH_TOKEN"],
-      SENTRY_ORG: source["SENTRY_ORG"],
-      SENTRY_PROJECT: source["SENTRY_PROJECT"],
-      NEXT_PUBLIC_SENTRY_ENABLED: source["NEXT_PUBLIC_SENTRY_ENABLED"] !== "false",
-      AEGIS_SENTRY_FEEDBACK_WIDGET:
-        source["AEGIS_SENTRY_FEEDBACK_WIDGET"] !== "false",
-      AEGIS_HARDENING_ENABLED: source["AEGIS_HARDENING_ENABLED"] !== "false",
-      AEGIS_LAYER_B1_PATHS: source["AEGIS_LAYER_B1_PATHS"] !== "false",
-      AEGIS_LAYER_B2_PII: source["AEGIS_LAYER_B2_PII"] !== "false",
-      AEGIS_LAYER_B3_REFS: source["AEGIS_LAYER_B3_REFS"] !== "false",
-      AEGIS_LAYER_B4_SECURITY: source["AEGIS_LAYER_B4_SECURITY"] !== "false",
-      AEGIS_LAYER_B5_REDACTION: source["AEGIS_LAYER_B5_REDACTION"] !== "false",
-      AEGIS_DEMO_MODE: source["AEGIS_DEMO_MODE"] === "true",
-      OPENCLAW_BASE_URL: source["OPENCLAW_BASE_URL"] ?? "http://localhost:8787",
-      OPENCLAW_API_TOKEN: source["OPENCLAW_API_TOKEN"],
-      OPENCLAW_WEBHOOK_SECRET: source["OPENCLAW_WEBHOOK_SECRET"],
-      OPENCLAW_AGENT_ID: source["OPENCLAW_AGENT_ID"] ?? "openclaw/default",
-      NEXT_PUBLIC_SUPABASE_URL: source["NEXT_PUBLIC_SUPABASE_URL"],
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: source["NEXT_PUBLIC_SUPABASE_ANON_KEY"],
-      SUPABASE_SERVICE_ROLE_KEY: source["SUPABASE_SERVICE_ROLE_KEY"],
-      DATABASE_URL: source["DATABASE_URL"],
-      PGBOSS_SCHEMA: source["PGBOSS_SCHEMA"] ?? "pgboss",
-      AEGIS_SESSION_SECRET: source["AEGIS_SESSION_SECRET"],
-      AEGIS_SESSION_PASSPHRASE_HASH: source["AEGIS_SESSION_PASSPHRASE_HASH"],
-      DISCORD_WEBHOOK_URL: source["DISCORD_WEBHOOK_URL"],
-      DISCORD_DEEP_LINK_BASE: source["DISCORD_DEEP_LINK_BASE"] ?? "https://aegis-codex.vercel.app/dashboard/approvals",
+      SENTRY_DSN: normalizedSource["SENTRY_DSN"],
+      SENTRY_AUTH_TOKEN: normalizedSource["SENTRY_AUTH_TOKEN"],
+      SENTRY_ORG: normalizedSource["SENTRY_ORG"],
+      SENTRY_PROJECT: normalizedSource["SENTRY_PROJECT"],
+      NEXT_PUBLIC_SENTRY_ENABLED:
+        normalizedSource["NEXT_PUBLIC_SENTRY_ENABLED"] !== "false",
+      NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET:
+        normalizedSource["NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET"] !== "false",
+      AEGIS_HARDENING_ENABLED:
+        normalizedSource["AEGIS_HARDENING_ENABLED"] !== "false",
+      AEGIS_LAYER_B1_PATHS: normalizedSource["AEGIS_LAYER_B1_PATHS"] !== "false",
+      AEGIS_LAYER_B2_PII: normalizedSource["AEGIS_LAYER_B2_PII"] !== "false",
+      AEGIS_LAYER_B3_REFS: normalizedSource["AEGIS_LAYER_B3_REFS"] !== "false",
+      AEGIS_LAYER_B4_SECURITY:
+        normalizedSource["AEGIS_LAYER_B4_SECURITY"] !== "false",
+      AEGIS_LAYER_B5_REDACTION:
+        normalizedSource["AEGIS_LAYER_B5_REDACTION"] !== "false",
+      AEGIS_DEMO_MODE: normalizedSource["AEGIS_DEMO_MODE"] === "true",
+      OPENCLAW_BASE_URL:
+        normalizedSource["OPENCLAW_BASE_URL"] ?? "http://localhost:8787",
+      OPENCLAW_API_TOKEN: normalizedSource["OPENCLAW_API_TOKEN"],
+      OPENCLAW_WEBHOOK_SECRET: normalizedSource["OPENCLAW_WEBHOOK_SECRET"],
+      OPENCLAW_AGENT_ID:
+        normalizedSource["OPENCLAW_AGENT_ID"] ?? "openclaw/default",
+      NEXT_PUBLIC_SUPABASE_URL: normalizedSource["NEXT_PUBLIC_SUPABASE_URL"],
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:
+        normalizedSource["NEXT_PUBLIC_SUPABASE_ANON_KEY"],
+      SUPABASE_SERVICE_ROLE_KEY: normalizedSource["SUPABASE_SERVICE_ROLE_KEY"],
+      DATABASE_URL: normalizedSource["DATABASE_URL"],
+      PGBOSS_SCHEMA: normalizedSource["PGBOSS_SCHEMA"] ?? "pgboss",
+      AEGIS_SESSION_SECRET: normalizedSource["AEGIS_SESSION_SECRET"],
+      AEGIS_SESSION_PASSPHRASE_HASH:
+        normalizedSource["AEGIS_SESSION_PASSPHRASE_HASH"],
+      DISCORD_WEBHOOK_URL: normalizedSource["DISCORD_WEBHOOK_URL"],
+      DISCORD_DEEP_LINK_BASE:
+        normalizedSource["DISCORD_DEEP_LINK_BASE"] ??
+        "https://aegis-codex.vercel.app/dashboard/approvals",
     } as AegisEnv;
     return permissive;
   }
 
   try {
-    return AegisEnvSchema.parse(source);
+    return AegisEnvSchema.parse(normalizedSource);
   } catch (err) {
     if (err instanceof z.ZodError) {
       const issues = err.issues

@@ -21,6 +21,10 @@ This document includes both.
 - Do not use the `Overview` page as a hero shot yet; it still reads like placeholder telemetry.
 - Use the strongest product surfaces: `Testbed`, `Flow`, `Compare`, `Eval`, and a separate Sentry browser tab.
 - Do not rely on the Sentry link in the dashboard header during recording; open Sentry in its own tab ahead of time.
+- Treat OpenClaw as **partially shipped Phase 2**, not just roadmap:
+  - closed and documented: runtime contract `#65`, approval epic `#31`, client `#39`, chat stream `#40`, webhook ingress `#44`, resolve flow `#47`, setup runbook `#86`
+  - still open: umbrella epic `#32`, full chat UI `#41`, approval cards `#48`, approvals queue `#49`, Discord fan-out `#50`, fuller Docker/devops coverage `#36`
+- If you mention OpenClaw on screen, prefer the issue board and `docs/OPENCLAW_SETUP.md` over unfinished dashboard surfaces.
 - Use one clear attack for the main story:
   - `path-traversal-001` for the cleanest block story
   - `prompt-injection-001` for the compare view
@@ -181,22 +185,23 @@ This document includes both.
 
 "Phase 1: ship the shield"
 
-### 0:35-0:45 — Roadmap Continuity
+### 0:35-0:48 — OpenClaw Status
 
 **Voiceover**
 
-"The development story does not stop at the demo. Phase 2 is already mapped out: chat, approvals, OpenClaw integration, and richer Sentry workflows."
+"The repo has already moved beyond a Phase 1 sketch. OpenClaw is partly integrated today: the typed client, hardened chat stream, webhook ingress, approval resolution, and setup runbook are closed. What remains open is the operator layer: chat UI, approval cards, approvals queue, Discord fan-out, and a fuller local stack."
 
 **Show**
 
-- Show open epic `#32`
-- Scroll just enough to reveal chat, approval, and observability slices
+- Show the issue board with these closed items visible: `#31`, `#39`, `#40`, `#44`, `#47`, `#65`, `#86`
+- Then show the still-open work: `#32`, `#36`, `#41`, `#48`, `#49`, `#50`
+- Optional quick flash of `docs/OPENCLAW_SETUP.md` to underline that the setup path is already documented
 
 **Caption**
 
-"Phase 2: operator-facing agent oversight"
+"OpenClaw backend shipped; operator UI still in progress"
 
-### 0:45-1:05 — Testbed Demo
+### 0:48-1:05 — Testbed Demo
 
 **Voiceover**
 
@@ -282,7 +287,7 @@ If time is tight, record these in order:
 
 1. Home page or README hero
 2. GitHub issues list with closed Phase 1 work
-3. GitHub issue `#32` Phase 2 epic
+3. GitHub issues view showing shipped OpenClaw backend work (`#31`, `#39`, `#40`, `#44`, `#47`, `#65`, `#86`) plus remaining Phase 2 UI work (`#32`, `#41`, `#48`, `#49`, `#50`)
 4. Dashboard `Testbed` firing `path-traversal-001`
 5. Dashboard `Flow`
 6. Dashboard `Compare` with `prompt-injection-001`
