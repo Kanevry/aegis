@@ -13,9 +13,11 @@ import { z } from 'zod';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
+import * as Sentry from '@sentry/nextjs';
 import { createHardening, extractPathsFromText } from '@aegis/hardening';
 import { getAttackById } from '@/lib/attacks';
 import { withHardeningSpan, captureAegisBlock } from '@/lib/sentry';
+import { recordDecision } from '@/lib/metrics';
 
 export const runtime = 'nodejs';
 
@@ -57,6 +59,15 @@ export async function POST(req: NextRequest) {
 
   // Sentry span with aegis.* attributes — delegates to withHardeningSpan for clean attribute wiring
   return withHardeningSpan('aegis.run', result, async () => {
+    // Defense-in-depth: recordDecision is resilient by contract, but if that contract
+    // ever breaks we capture the failure to Sentry instead of letting it tear down
+    // the user-facing request.
+    try {
+      await recordDecision(result, { patternId: stablePatternId, provider: body.provider });
+    } catch (err) {
+      Sentry.captureException(err, { tags: { 'aegis.component': 'metrics.recordDecision' } });
+    }
+
     if (!result.allowed) {
       captureAegisBlock(result, stablePatternId);
 
