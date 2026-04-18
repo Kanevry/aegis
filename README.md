@@ -116,6 +116,11 @@ Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/ui (Lyra) · OpenAI GPT-4o/GP
 ## Contributing and security
 
 - Architecture overview: [`docs/architecture.md`](docs/architecture.md)
+- OpenClaw setup: [`docs/OPENCLAW_SETUP.md`](docs/OPENCLAW_SETUP.md)
+- ADR: [`docs/ADR.md`](docs/ADR.md)
+- Phase 2 Seer vision: [`docs/PHASE-2-SEER-VISION.md`](docs/PHASE-2-SEER-VISION.md)
+- Kickoff notes: [`docs/KICKOFF-NOTES-2026-04-18.md`](docs/KICKOFF-NOTES-2026-04-18.md)
+- Submission copy: [`docs/SUBMISSION.md`](docs/SUBMISSION.md)
 - Contributing guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Code of Conduct: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 - Security policy: [`SECURITY.md`](SECURITY.md)
