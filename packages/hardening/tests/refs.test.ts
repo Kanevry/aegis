@@ -240,3 +240,38 @@ describe("B3 — large visited set performance", () => {
     expect(elapsed).toBeLessThan(100);
   });
 });
+
+describe("B3 — visited set containing empty string (covers !v guard)", () => {
+  it("skips the empty-string entry in visited during prefix matching and still validates correctly", () => {
+    // The prefix-matching loop inside validateGroundingRefs has a `if (!v) continue`
+    // guard. We trigger it by putting an empty string directly into the visited set
+    // (bypassing trackVisited which also guards against empty strings).
+    const visited = new Set<string>();
+    visited.add(""); // empty string — should be skipped by the !v guard
+    visited.add("/workspace/src/app.ts"); // valid entry that should match the ref
+
+    const result = validateGroundingRefs(["/workspace/src/app.ts"], visited);
+    expect(result.ok).toBe(true);
+    expect(result.unknownRefs).toHaveLength(0);
+  });
+
+  it("reports unknown ref when visited set contains only the empty string", () => {
+    // Empty string is skipped; no valid visited path → prefix match fails → unknown
+    const visited = new Set<string>();
+    visited.add("");
+
+    const result = validateGroundingRefs(["/workspace/file.ts"], visited);
+    expect(result.ok).toBe(false);
+    expect(result.unknownRefs).toContain("/workspace/file.ts");
+  });
+
+  it("skips empty string in visited but still matches via prefix (parent-child direction)", () => {
+    // visited has "" + a parent dir; ref is a child path
+    const visited = new Set<string>();
+    visited.add(""); // skipped by !v guard
+    visited.add("/workspace/src"); // parent — triggers v.startsWith(ref+"/") or ref.startsWith(v+"/")
+
+    const result = validateGroundingRefs(["/workspace/src/utils.ts"], visited);
+    expect(result.ok).toBe(true);
+  });
+});
