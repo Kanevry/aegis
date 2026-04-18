@@ -1,0 +1,47 @@
+rules:
+  - id: aegis-no-raw-error-details-in-response
+    message: Do not return raw error details to clients; map to a safe code/message instead.
+    severity: ERROR
+    languages:
+      - typescript
+      - javascript
+    patterns:
+      - pattern-either:
+          - pattern: |
+              Response.json({ ..., $KEY: $ERR.message, ... }, ...)
+          - pattern: |
+              Response.json({ ..., $KEY: $ERR.stack, ... }, ...)
+          - pattern: |
+              NextResponse.json({ ..., $KEY: $ERR.message, ... }, ...)
+          - pattern: |
+              NextResponse.json({ ..., $KEY: $ERR.stack, ... }, ...)
+    metadata:
+      category: security
+      technology:
+        - nextjs
+        - typescript
+
+  - id: aegis-no-process-env-in-client-components
+    message: Browser code should only read NEXT_PUBLIC_* env vars.
+    severity: ERROR
+    languages:
+      - typescript
+      - javascript
+    paths:
+      include:
+        - src/**/*.tsx
+        - src/instrumentation-client.ts
+    patterns:
+      - pattern: process.env.$VAR
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: ^(?!NEXT_PUBLIC_|NODE_ENV$).+
+      - pattern-not-inside: |
+          if (typeof window === 'undefined') {
+            ...
+          }
+    metadata:
+      category: security
+      technology:
+        - nextjs
+        - react
