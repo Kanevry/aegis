@@ -9,21 +9,39 @@ import {
   GitBranch,
   GitCompareArrows,
   LayoutDashboard,
+  MessageSquare,
+  ShieldAlert,
   ShieldCheck,
   Zap,
 } from 'lucide-react';
 import { Sidebar, SidebarNav, SidebarNavItem } from '@/components/ui/sidebar';
+import { usePendingApprovals } from '@/lib/use-pending-approvals';
 
-const navItems: { href: Route; icon: React.ReactNode; label: string; exact?: boolean }[] = [
-  { href: '/dashboard' as Route, icon: <LayoutDashboard size={16} />, label: 'Overview', exact: true },
-  { href: '/dashboard/testbed' as Route, icon: <Zap size={16} />, label: 'Testbed' },
-  { href: '/dashboard/flow' as Route, icon: <GitBranch size={16} />, label: 'Flow' },
-  { href: '/dashboard/sandbox' as Route, icon: <ShieldCheck size={16} />, label: 'Sandbox' },
-  { href: '/dashboard/compare' as Route, icon: <GitCompareArrows size={16} />, label: 'Compare' },
-  { href: '/dashboard/eval' as Route, icon: <Grid2X2Check size={16} />, label: 'Eval' },
-];
+interface NavItem {
+  href: Route;
+  icon: React.ReactNode;
+  label: string;
+  exact?: boolean;
+  badge?: React.ReactNode;
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { count } = usePendingApprovals();
+
+  const pendingBadge = count > 0 ? <span>{count}</span> : undefined;
+
+  const navItems: NavItem[] = [
+    { href: '/dashboard' as Route, icon: <LayoutDashboard size={16} />, label: 'Overview', exact: true },
+    { href: '/dashboard/testbed' as Route, icon: <Zap size={16} />, label: 'Testbed' },
+    { href: '/dashboard/chat' as Route, icon: <MessageSquare size={16} />, label: 'Chat' },
+    { href: '/dashboard/approvals' as Route, icon: <ShieldAlert size={16} />, label: 'Approvals', badge: pendingBadge },
+    { href: '/dashboard/flow' as Route, icon: <GitBranch size={16} />, label: 'Flow' },
+    { href: '/dashboard/sandbox' as Route, icon: <ShieldCheck size={16} />, label: 'Sandbox' },
+    { href: '/dashboard/compare' as Route, icon: <GitCompareArrows size={16} />, label: 'Compare' },
+    { href: '/dashboard/eval' as Route, icon: <Grid2X2Check size={16} />, label: 'Eval' },
+    { href: '/dashboard/events' as Route, icon: <Activity size={16} />, label: 'Events' },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar>
@@ -42,6 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={item.href}
               icon={item.icon}
               exact={item.exact}
+              badge={item.badge}
             >
               {item.label}
             </SidebarNavItem>

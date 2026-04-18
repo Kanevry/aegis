@@ -32,9 +32,10 @@ interface SidebarNavItemProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   exact?: boolean;
+  badge?: React.ReactNode;
 }
 
-export function SidebarNavItem({ href, icon, children, exact = false }: SidebarNavItemProps) {
+export function SidebarNavItem({ href, icon, children, exact = false, badge }: SidebarNavItemProps) {
   const pathname = usePathname();
   const isActive = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/');
 
@@ -49,7 +50,12 @@ export function SidebarNavItem({ href, icon, children, exact = false }: SidebarN
       )}
     >
       <span className="h-4 w-4 shrink-0">{icon}</span>
-      {children}
+      <span className="flex-1">{children}</span>
+      {badge ? (
+        <span className="inline-flex items-center rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-500/40">
+          {badge}
+        </span>
+      ) : null}
     </Link>
   );
 }
