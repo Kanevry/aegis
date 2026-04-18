@@ -14,6 +14,11 @@ The safest plan is:
 
 This document includes both.
 
+Current runtimes:
+
+- Submission cut: **1:30**
+- Extended cut: **2:00**
+
 ---
 
 ## Recording Notes
@@ -30,6 +35,12 @@ This document includes both.
   - `prompt-injection-001` for the compare view
 - Keep zoom level large enough that blocked layers and status badges are readable in a screen recording.
 - Add captions, because the submission should work without audio.
+
+## macOS Recording Setup
+
+- Best overall for this style of polished product demo: **Screen Studio**
+- Best built-in fallback with zero setup: **QuickTime / macOS Screenshot**
+- Best free power-user option: **OBS Studio**
 
 ---
 
