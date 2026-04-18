@@ -21,20 +21,38 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: shouldUploadSentryArtifacts ? process.env.SENTRY_AUTH_TOKEN : undefined,
+function hasRealValue(value: string | undefined, placeholders: string[] = []) {
+  if (!value) {
+    return false;
+  }
+
+  return !value.includes('…') && !placeholders.includes(value);
+}
+
+const hasSentryReleaseConfig =
+  hasRealValue(process.env.SENTRY_AUTH_TOKEN) &&
+  hasRealValue(process.env.SENTRY_ORG, ['your-org-slug']) &&
+  hasRealValue(process.env.SENTRY_PROJECT, ['aegis']);
+
+const shouldCreateSentryRelease =
+  shouldUploadSentryArtifacts && hasSentryReleaseConfig;
+
+const sentryConfig = withSentryConfig(nextConfig, {
+  org: shouldCreateSentryRelease ? process.env.SENTRY_ORG : undefined,
+  project: shouldCreateSentryRelease ? process.env.SENTRY_PROJECT : undefined,
+  authToken: shouldCreateSentryRelease ? process.env.SENTRY_AUTH_TOKEN : undefined,
   silent: !process.env.CI,
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring',
   disableLogger: true,
   sourcemaps: {
-    disable: !shouldUploadSentryArtifacts,
-    deleteSourcemapsAfterUpload: shouldUploadSentryArtifacts,
+    disable: !shouldCreateSentryRelease,
+    deleteSourcemapsAfterUpload: shouldCreateSentryRelease,
   },
   release: {
-    create: shouldUploadSentryArtifacts,
-    finalize: shouldUploadSentryArtifacts,
+    create: shouldCreateSentryRelease,
+    finalize: shouldCreateSentryRelease,
   },
 });
+
+export default shouldCreateSentryRelease ? sentryConfig : nextConfig;

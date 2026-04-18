@@ -54,6 +54,7 @@ Out of scope:
 - Any exposed credential should be rotated immediately, documented in the incident thread, and removed from logs or screenshots where possible.
 - Gitleaks runs on every pull request and push through [`.github/workflows/secret-scan.yml`](./.github/workflows/secret-scan.yml) with the repo-specific rules in [`.gitleaks.toml`](./.gitleaks.toml). Findings fail CI and upload a report artifact for triage.
 - Demo credentials should be short-lived and rotated after public demos, releases, or suspected exposure.
+- Published releases should include a CycloneDX SBOM artifact so downstream users can inspect shipped dependencies. Repository automation for this is tracked in [#81](https://github.com/Kanevry/aegis/issues/81).
 
 ## Scanner remediation flow
 

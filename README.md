@@ -205,6 +205,18 @@ Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/ui (Lyra) · OpenAI `gpt-4o-m
 
 ---
 
+## Contributing and security
+
+- Architecture overview: [`docs/architecture.md`](docs/architecture.md)
+- OpenClaw setup: [`docs/OPENCLAW_SETUP.md`](docs/OPENCLAW_SETUP.md)
+- ADR: [`docs/ADR.md`](docs/ADR.md)
+- Phase 2 Seer vision: [`docs/PHASE-2-SEER-VISION.md`](docs/PHASE-2-SEER-VISION.md)
+- Kickoff notes: [`docs/KICKOFF-NOTES-2026-04-18.md`](docs/KICKOFF-NOTES-2026-04-18.md)
+- Submission copy: [`docs/SUBMISSION.md`](docs/SUBMISSION.md)
+- Contributing guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- Code of Conduct: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
+- Security policy: [`SECURITY.md`](SECURITY.md)
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Post-hackathon, each `packages/*` will be published as an independent npm package under the `@aegis` scope.
@@ -215,4 +227,3 @@ MIT — see [LICENSE](LICENSE). Post-hackathon, each `packages/*` will be publis
 
 - Hackathon: https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18
 - Sentry AI Agent Monitoring: https://blog.sentry.io/sentrys-updated-agent-monitoring/
-- Architecture Decision Record: [`docs/architecture-decision-record.md`](docs/architecture-decision-record.md)
