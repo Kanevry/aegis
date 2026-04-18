@@ -31,6 +31,21 @@ function runOrThrow(command, args, options) {
   }
 }
 
+function run(command, args, options) {
+  const result = spawnSync(command, args, options);
+  if (result.error) {
+    throw result.error;
+  }
+  return result;
+}
+
+const tuiArgs = ["--url", `ws://127.0.0.1:${port}`, "--token", token];
+const tuiEnv = {
+  ...process.env,
+  OPENCLAW_GATEWAY_PORT: port,
+  OPENCLAW_GATEWAY_TOKEN: token,
+};
+
 if (!fs.existsSync(path.join(openclawDir, "node_modules"))) {
   console.log("OpenClaw dependencies are missing; running pnpm install first");
   runOrThrow("pnpm", ["install"], {
@@ -40,12 +55,20 @@ if (!fs.existsSync(path.join(openclawDir, "node_modules"))) {
   });
 }
 
-runOrThrow("pnpm", ["tui", "--", "--url", `ws://127.0.0.1:${port}`, "--token", token], {
+const localResult = run("pnpm", ["tui", "--", ...tuiArgs], {
   cwd: openclawDir,
   stdio: "inherit",
-  env: {
-    ...process.env,
-    OPENCLAW_GATEWAY_PORT: port,
-    OPENCLAW_GATEWAY_TOKEN: token,
-  },
+  env: tuiEnv,
+});
+
+if ((localResult.status ?? 1) === 0) {
+  process.exit(0);
+}
+
+console.log("Local OpenClaw source TUI failed; falling back to published openclaw CLI");
+
+runOrThrow("npx", ["--yes", "openclaw@latest", "tui", ...tuiArgs], {
+  cwd: ROOT_DIR,
+  stdio: "inherit",
+  env: tuiEnv,
 });
