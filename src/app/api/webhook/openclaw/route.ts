@@ -4,6 +4,7 @@ import { verifyWebhookSignature } from '@aegis/openclaw-client';
 import { loadEnv } from '@aegis/types';
 import { openclawEventSchema } from './schema';
 import { AEGIS_WEBHOOK_ATTRS } from './span-attrs';
+import { dispatchEvent } from './dispatchers';
 
 export const runtime = 'nodejs';
 
@@ -52,9 +53,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
     },
     async (span) => {
-      // Wave 3 (dispatchers.ts) will attach dedupe-then-dispatch logic here.
-      span.setAttribute(AEGIS_WEBHOOK_ATTRS.DEDUPED, false);
-      return NextResponse.json({ ok: true, event_id: parsed.event_id, type: parsed.type });
+      try {
+        const { deduped } = await dispatchEvent(parsed);
+        span.setAttribute(AEGIS_WEBHOOK_ATTRS.DEDUPED, deduped);
+        return NextResponse.json({ ok: true, event_id: parsed.event_id, type: parsed.type, deduped });
+      } catch (err) {
+        Sentry.captureException(err, { tags: { 'aegis.webhook.event_type': parsed.type } });
+        return NextResponse.json(
+          { ok: false, error: 'dispatch_failed' },
+          { status: 500 },
+        );
+      }
     },
   );
 }
