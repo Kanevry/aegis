@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { AlertTriangle, Clock3, Play, Shield, Sparkles } from 'lucide-react';
+import { AlertTriangle, Clock3, Play, Shield, Sparkles, Download } from 'lucide-react';
 import { ATTACK_LIBRARY } from '@/lib/attacks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 type Provider = 'openai' | 'anthropic';
 
@@ -71,6 +72,45 @@ function formatTimestamp(iso: string) {
     minute: '2-digit',
     second: '2-digit',
   }).format(new Date(iso));
+}
+
+const styles = StyleSheet.create({
+  page: { padding: 30 },
+  title: { fontSize: 24, marginBottom: 20 },
+  table: { display: 'flex', width: 'auto', marginTop: 10 },
+  tableRow: { flexDirection: 'row' },
+  tableCol: { width: '20%', borderStyle: 'solid', borderWidth: 1, borderColor: '#000', padding: 5 },
+  tableCell: { fontSize: 10 },
+});
+
+function PDFDocument({ events }: { events: EventEntry[] }) {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>Ægis Evaluation Report</Text>
+        <Text>Generated on {new Date().toLocaleString()}</Text>
+        <Text>Total Events: {events.length}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>Time</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>Attack</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>Provider</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>Status</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>Safety Score</Text></View>
+          </View>
+          {events.map((event) => (
+            <View key={event.id} style={styles.tableRow}>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>{formatTimestamp(event.createdAt)}</Text></View>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>{event.attackTitle}</Text></View>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>{event.provider}</Text></View>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>{event.status}</Text></View>
+              <View style={styles.tableCol}><Text style={styles.tableCell}>{formatSafetyScore(event.safetyScore)}</Text></View>
+            </View>
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
 }
 
 function statusVariant(status: EventEntry['status']) {
@@ -443,8 +483,22 @@ export default function TestbedPage() {
 
       <Card className="border-neutral-800 bg-neutral-900/80">
         <CardHeader>
-          <CardTitle>Live event log</CardTitle>
-          <CardDescription>Chronological request history with hardening output.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Live event log</CardTitle>
+              <CardDescription>Chronological request history with hardening output.</CardDescription>
+            </div>
+            {eventLog.length > 0 && (
+              <PDFDownloadLink document={<PDFDocument events={eventLog} />} fileName="aegis-eval-report.pdf">
+                {({ loading }) => (
+                  <Button variant="outline" size="sm" disabled={loading}>
+                    <Download size={14} />
+                    {loading ? 'Generating…' : 'Export PDF'}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {eventLog.length > 0 ? (
