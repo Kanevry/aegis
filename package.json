@@ -59,7 +59,6 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@types/react-pdf": "^7.0.0",
     "@typescript/native-preview": "^7.0.0-dev.20251110.1",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
