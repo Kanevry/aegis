@@ -1,22 +1,27 @@
 import * as Sentry from '@sentry/nextjs';
-import { createServiceRoleClient } from '@/lib/supabase';
 import { createApproval, markDecided } from '@/lib/approvals';
 import { enqueue, QUEUES } from '@/lib/pgboss-client';
+import { query } from '@/lib/postgres';
 import type { OpenclawEventPayload } from './schema';
 
 type DedupeResult = 'inserted' | 'duplicate';
 
 async function insertEventIfNew(event: OpenclawEventPayload): Promise<DedupeResult> {
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from('openclaw_events').insert({
-    event_id: event.event_id,
-    event_type: event.type,
-    payload: event as unknown as Record<string, unknown>,
-  });
-  if (!error) return 'inserted';
-  // Postgres unique_violation
-  if ((error as { code?: string }).code === '23505') return 'duplicate';
-  throw error;
+  const rows = await query<{ event_id: string }>(
+    `
+      insert into openclaw_events (
+        event_id,
+        event_type,
+        payload
+      )
+      values ($1, $2, $3::jsonb)
+      on conflict (event_id, event_type) do nothing
+      returning event_id
+    `,
+    [event.event_id, event.type, JSON.stringify(event)],
+  );
+
+  return rows.length > 0 ? 'inserted' : 'duplicate';
 }
 
 export async function dispatchEvent(event: OpenclawEventPayload): Promise<{ deduped: boolean }> {
@@ -112,20 +117,28 @@ async function handleExecRunning(
 async function handleExecFinished(
   event: Extract<OpenclawEventPayload, { type: 'exec.finished' }>,
 ): Promise<void> {
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from('aegis_decisions').insert({
-    approval_id: event.run_id,
-    layer: 'B5', // CHECK constraint allows B1..B5; sandbox outcome stored in details.sub_layer
-    outcome: event.exit_code === 0 ? 'ok' : 'blocked',
-    safety_score: null,
-    details: {
-      sub_layer: 'B6',
-      exit_code: event.exit_code,
-      duration_ms: event.duration_ms ?? null,
-      output: event.output ?? null,
-    },
-  });
-  if (error) throw error;
+  await query(
+    `
+      insert into aegis_decisions (
+        approval_id,
+        layer,
+        outcome,
+        safety_score,
+        details
+      )
+      values ($1, 'B5', $2, null, $3::jsonb)
+    `,
+    [
+      event.run_id,
+      event.exit_code === 0 ? 'ok' : 'blocked',
+      JSON.stringify({
+        sub_layer: 'B6',
+        exit_code: event.exit_code,
+        duration_ms: event.duration_ms ?? null,
+        output: event.output ?? null,
+      }),
+    ],
+  );
 }
 
 async function handleExecDenied(
@@ -137,16 +150,23 @@ async function handleExecDenied(
     message: 'exec.denied',
     data: { run_id: event.run_id, reason: event.reason },
   });
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from('aegis_decisions').insert({
-    approval_id: event.run_id,
-    layer: 'B5', // CHECK constraint allows B1..B5; sandbox outcome stored in details.sub_layer
-    outcome: 'blocked',
-    safety_score: null,
-    details: {
-      sub_layer: 'B6',
-      reason: event.reason,
-    },
-  });
-  if (error) throw error;
+  await query(
+    `
+      insert into aegis_decisions (
+        approval_id,
+        layer,
+        outcome,
+        safety_score,
+        details
+      )
+      values ($1, 'B5', 'blocked', null, $2::jsonb)
+    `,
+    [
+      event.run_id,
+      JSON.stringify({
+        sub_layer: 'B6',
+        reason: event.reason,
+      }),
+    ],
+  );
 }

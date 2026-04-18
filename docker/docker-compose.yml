@@ -2,23 +2,28 @@ name: aegis-openclaw
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aegis}
       POSTGRES_USER: ${POSTGRES_USER:-aegis}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis}
-      POSTGRES_DB: ${POSTGRES_DB:-aegis}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-aegis} -d ${POSTGRES_DB:-aegis}
+      interval: 5s
+      timeout: 5s
+      retries: 20
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${AEGIS_POSTGRES_PORT:-54329}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aegis}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
 
   aegis-web:
+    depends_on:
+      postgres:
+        condition: service_healthy
     build:
       context: ..
       dockerfile: docker/Dockerfile.aegis
@@ -29,6 +34,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       SKIP_ENV_VALIDATION: ${SKIP_ENV_VALIDATION:-false}
+      AEGIS_DEMO_DISABLE_AUTH: ${AEGIS_DEMO_DISABLE_AUTH:-true}
       AEGIS_SHARED_TOKEN: ${AEGIS_SHARED_TOKEN}
       AEGIS_WEB_BASE_URL: ${AEGIS_WEB_BASE_URL:-http://localhost:3000}
       AEGIS_EXPECTED_OPENCLAW_GATEWAY_URL: http://openclaw-gateway:${OPENCLAW_GATEWAY_PORT:-18789}
@@ -39,11 +45,10 @@ services:
       SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN:-}
       DATABASE_URL: ${DATABASE_URL:-postgres://aegis:aegis@postgres:5432/aegis}
       PGBOSS_SCHEMA: ${PGBOSS_SCHEMA:-pgboss}
+      AEGIS_SESSION_SECRET: ${AEGIS_SESSION_SECRET:-}
+      AEGIS_SESSION_PASSPHRASE_HASH: ${AEGIS_SESSION_PASSPHRASE_HASH:-}
     ports:
       - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   aegis-worker:
     build:

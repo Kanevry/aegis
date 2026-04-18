@@ -1,18 +1,15 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Approval, ApprovalDecision, ApprovalDecidedBy } from "@aegis/types";
-import { createServiceRoleClient } from "./supabase";
+import type { Approval, ApprovalDecision, ApprovalDecidedBy, ApprovalStatus } from "@aegis/types";
 import { enqueue, QUEUES } from "./pgboss-client";
+import { asIsoString, query, queryOne } from "./postgres";
 
 async function scheduleExpire(id: string, delaySeconds = 900): Promise<void> {
   try {
     await enqueue(QUEUES.APPROVAL_EXPIRE, { id }, { startAfter: delaySeconds });
   } catch (err) {
-    // pg-boss down → approval still persists; log and continue (best-effort schedule)
-    console.warn('[approvals] failed to schedule approval.expire', err);
+    console.warn("[approvals] failed to schedule approval.expire", err);
   }
 }
 
-// Inline type for CreateApprovalInput so we don't widen @aegis/types for internal params
 export type CreateApprovalInput = {
   openclaw_approval_id: string;
   session_id: string | null;
@@ -28,146 +25,241 @@ export type MarkDecidedInput = {
   reason?: string;
 };
 
-// Minimal shape of HardeningResult we actually read — inline to avoid importing @aegis/hardening here
 export type HardeningResultInput = {
   safetyScore: number;
   blockedLayers: string[];
   allowed: boolean;
 };
 
-export async function createApproval(
-  input: CreateApprovalInput,
-  client: SupabaseClient = createServiceRoleClient(),
-): Promise<Approval> {
-  const { data, error } = await client
-    .from("approvals")
-    .insert({
-      id: input.openclaw_approval_id,
-      session_id: input.session_id,
-      tool: input.tool,
-      args: input.args,
-      system_run_plan: input.system_run_plan ?? null,
-      status: "pending",
-    })
-    .select()
-    .single<Approval>();
+type ApprovalRow = {
+  id: string;
+  session_id: string | null;
+  tool: string;
+  args: Record<string, unknown>;
+  system_run_plan: unknown | null;
+  status: ApprovalStatus;
+  decided_by: ApprovalDecidedBy | null;
+  decided_at: Date | string | null;
+  decision_scope: ApprovalDecision | null;
+  reason: string | null;
+  sentry_issue_url: string | null;
+  created_at: Date | string;
+};
 
-  if (error) throw new Error(`createApproval failed: ${error.message}`);
-  if (!data) throw new Error("createApproval returned no data");
-
-  await scheduleExpire(data.id);
-  return data;
+function mapApproval(row: ApprovalRow): Approval {
+  return {
+    id: row.id,
+    session_id: row.session_id,
+    tool: row.tool,
+    args: row.args,
+    system_run_plan: row.system_run_plan,
+    status: row.status,
+    decided_by: row.decided_by,
+    decided_at: row.decided_at ? asIsoString(row.decided_at) : null,
+    decision_scope: row.decision_scope,
+    reason: row.reason,
+    sentry_issue_url: row.sentry_issue_url,
+    created_at: asIsoString(row.created_at),
+  };
 }
 
-export async function getApproval(
-  id: string,
-  client: SupabaseClient = createServiceRoleClient(),
-): Promise<Approval | null> {
-  const { data, error } = await client
-    .from("approvals")
-    .select("*")
-    .eq("id", id)
-    .single<Approval>();
+export async function createApproval(
+  input: CreateApprovalInput,
+  _client?: unknown,
+): Promise<Approval> {
+  const row = await queryOne<ApprovalRow>(
+    `
+      insert into approvals (
+        id,
+        session_id,
+        tool,
+        args,
+        system_run_plan,
+        status
+      )
+      values ($1, $2, $3, $4::jsonb, $5::jsonb, 'pending')
+      returning *
+    `,
+    [
+      input.openclaw_approval_id,
+      input.session_id,
+      input.tool,
+      JSON.stringify(input.args),
+      JSON.stringify(input.system_run_plan ?? null),
+    ],
+  );
 
-  // PGRST116 = "exactly one row" violation (0 rows returned) — treat as not found
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw new Error(`getApproval failed: ${error.message}`);
-  }
+  if (!row) throw new Error("createApproval returned no data");
 
-  return data;
+  await scheduleExpire(row.id);
+  return mapApproval(row);
+}
+
+export async function getApproval(id: string, _client?: unknown): Promise<Approval | null> {
+  const row = await queryOne<ApprovalRow>(
+    `
+      select *
+      from approvals
+      where id = $1
+    `,
+    [id],
+  );
+
+  return row ? mapApproval(row) : null;
 }
 
 export async function listPending(
   userId: string,
   filters: { tool?: string; since?: Date; limit?: number } = {},
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<Approval[]> {
-  // Use PostgREST embedded resource syntax for inner join with sessions.
-  // !inner ensures only approvals that have a matching session row are returned.
-  let query = client
-    .from("approvals")
-    .select("*, sessions!inner(user_id)")
-    .eq("status", "pending")
-    .eq("sessions.user_id", userId);
+  const params: unknown[] = [userId];
+  const where = ["s.user_id = $1", "a.status = 'pending'"];
 
   if (filters.tool) {
-    query = query.eq("tool", filters.tool);
+    params.push(filters.tool);
+    where.push(`a.tool = $${params.length}`);
   }
+
   if (filters.since) {
-    query = query.gte("created_at", filters.since.toISOString());
-  }
-  if (filters.limit) {
-    query = query.limit(filters.limit);
+    params.push(filters.since.toISOString());
+    where.push(`a.created_at >= $${params.length}`);
   }
 
-  const { data, error } = await query.returns<Approval[]>();
+  const limit = filters.limit ?? 20;
+  params.push(limit);
 
-  if (error) throw new Error(`listPending failed: ${error.message}`);
-  return data ?? [];
+  const rows = await query<ApprovalRow>(
+    `
+      select a.*
+      from approvals a
+      inner join sessions s on s.id = a.session_id
+      where ${where.join(" and ")}
+      order by a.created_at desc
+      limit $${params.length}
+    `,
+    params,
+  );
+
+  return rows.map(mapApproval);
+}
+
+export async function listApprovals(
+  userId: string,
+  filters: { status?: ApprovalStatus | "all"; tool?: string; limit?: number } = {},
+): Promise<Approval[]> {
+  const params: unknown[] = [userId];
+  const where = ["s.user_id = $1"];
+
+  if (filters.status && filters.status !== "all") {
+    params.push(filters.status);
+    where.push(`a.status = $${params.length}`);
+  }
+
+  if (filters.tool) {
+    params.push(filters.tool);
+    where.push(`a.tool = $${params.length}`);
+  }
+
+  params.push(filters.limit ?? 20);
+
+  const rows = await query<ApprovalRow>(
+    `
+      select a.*
+      from approvals a
+      inner join sessions s on s.id = a.session_id
+      where ${where.join(" and ")}
+      order by a.created_at desc
+      limit $${params.length}
+    `,
+    params,
+  );
+
+  return rows.map(mapApproval);
 }
 
 export async function markDecided(
   input: MarkDecidedInput,
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<Approval> {
   const newStatus = input.decision.startsWith("allow") ? "approved" : "denied";
 
-  const { data, error } = await client
-    .from("approvals")
-    .update({
-      status: newStatus,
-      decision_scope: input.decision,
-      decided_by: input.decided_by,
-      reason: input.reason ?? null,
-      decided_at: new Date().toISOString(),
-    })
-    .eq("id", input.id)
-    .eq("status", "pending")
-    .select()
-    .single<Approval>();
+  const row = await queryOne<ApprovalRow>(
+    `
+      update approvals
+      set
+        status = $2,
+        decision_scope = $3,
+        decided_by = $4,
+        reason = $5,
+        decided_at = now()
+      where id = $1
+        and status = 'pending'
+      returning *
+    `,
+    [input.id, newStatus, input.decision, input.decided_by, input.reason ?? null],
+  );
 
-  if (error) throw new Error(`markDecided failed: ${error.message}`);
-  if (!data) throw new Error("markDecided returned no data — approval may already be decided");
+  if (!row) {
+    throw new Error("markDecided returned no data — approval may already be decided");
+  }
 
-  return data;
+  return mapApproval(row);
 }
 
 export async function expireIfPending(
   id: string,
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<"expired" | "already_decided"> {
-  const { data, error } = await client
-    .from("approvals")
-    .update({ status: "expired" })
-    .eq("id", id)
-    .eq("status", "pending")
-    .select("status")
-    .returns<{ status: string }[]>();
+  const row = await queryOne<{ status: string }>(
+    `
+      update approvals
+      set status = 'expired'
+      where id = $1
+        and status = 'pending'
+      returning status
+    `,
+    [id],
+  );
 
-  if (error) throw new Error(`expireIfPending failed: ${error.message}`);
-
-  // If at least one row was updated, the approval is now expired
-  if (data && data.length > 0) return "expired";
-  return "already_decided";
+  return row ? "expired" : "already_decided";
 }
 
 export async function logAegisDecisionForApproval(
   approvalId: string,
   result: HardeningResultInput,
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<void> {
   if (result.blockedLayers.length === 0) return;
 
-  const rows = result.blockedLayers.map((layer) => ({
-    approval_id: approvalId,
-    layer,
-    outcome: result.allowed ? "warn" : "blocked",
-    safety_score: result.safetyScore,
-    details: {},
-  }));
+  const params: unknown[] = [];
+  const values: string[] = [];
 
-  const { error } = await client.from("aegis_decisions").insert(rows);
+  for (const layer of result.blockedLayers) {
+    params.push(
+      approvalId,
+      layer,
+      result.allowed ? "warn" : "blocked",
+      result.safetyScore,
+      JSON.stringify({}),
+    );
+    const offset = params.length - 4;
+    values.push(
+      `($${offset}, $${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::jsonb)`,
+    );
+  }
 
-  if (error) throw new Error(`logAegisDecisionForApproval failed: ${error.message}`);
+  await query(
+    `
+      insert into aegis_decisions (
+        approval_id,
+        layer,
+        outcome,
+        safety_score,
+        details
+      )
+      values ${values.join(", ")}
+    `,
+    params,
+  );
 }

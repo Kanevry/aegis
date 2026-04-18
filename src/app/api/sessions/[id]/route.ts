@@ -5,8 +5,7 @@ export const runtime = "nodejs";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, verifySession } from "@/lib/auth";
 import { apiOk, apiError } from "@/lib/api";
-import { getSession } from "@/lib/sessions";
-import { createServiceRoleClient } from "@/lib/supabase";
+import { deleteSession, getSession } from "@/lib/sessions";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -49,29 +48,12 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
 
   const { id } = await params;
 
-  const client = createServiceRoleClient();
-
-  // Verify the session exists before deleting
-  const { data: existing, error: fetchError } = await client
-    .from("sessions")
-    .select("id")
-    .eq("id", id)
-    .single<{ id: string }>();
-
-  if (fetchError) {
-    if (fetchError.code === "PGRST116") {
+  try {
+    const deleted = await deleteSession(id);
+    if (!deleted) {
       return apiError({ status: 404, error: "not_found", message: "Session not found" });
     }
-    return apiError({ status: 500, error: "internal" });
-  }
-
-  if (!existing) {
-    return apiError({ status: 404, error: "not_found", message: "Session not found" });
-  }
-
-  const { error: deleteError } = await client.from("sessions").delete().eq("id", id);
-
-  if (deleteError) {
+  } catch {
     return apiError({ status: 500, error: "internal" });
   }
 

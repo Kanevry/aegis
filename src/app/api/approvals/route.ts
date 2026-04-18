@@ -6,10 +6,8 @@ export const runtime = 'nodejs';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth';
-import { listPending } from '@/lib/approvals';
-import { createServiceRoleClient } from '@/lib/supabase';
+import { listApprovals } from '@/lib/approvals';
 import { apiOk, apiError } from '@/lib/api';
-import type { Approval } from '@aegis/types';
 
 // ── Query schema ──────────────────────────────────────────────────────────────
 
@@ -51,52 +49,11 @@ export async function GET(req: Request) {
 
   const { status, tool, limit } = query;
 
-  let data: Approval[];
-
   try {
-    if (status === 'pending') {
-      // Use the dedicated listPending helper which enforces session ownership
-      data = await listPending(userId, { tool, limit });
-    } else if (status === 'all') {
-      // Fetch all statuses for this user's sessions
-      const client = createServiceRoleClient();
-      let q = client
-        .from('approvals')
-        .select('*, sessions!inner(user_id)')
-        .eq('sessions.user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (tool) {
-        q = q.eq('tool', tool);
-      }
-
-      const { data: rows, error } = await q.returns<Approval[]>();
-      if (error) throw new Error(`list all failed: ${error.message}`);
-      data = rows ?? [];
-    } else {
-      // Specific non-pending status
-      const client = createServiceRoleClient();
-      let q = client
-        .from('approvals')
-        .select('*, sessions!inner(user_id)')
-        .eq('sessions.user_id', userId)
-        .eq('status', status)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (tool) {
-        q = q.eq('tool', tool);
-      }
-
-      const { data: rows, error } = await q.returns<Approval[]>();
-      if (error) throw new Error(`list ${status} failed: ${error.message}`);
-      data = rows ?? [];
-    }
+    const data = await listApprovals(userId, { status, tool, limit });
+    return apiOk(data);
   } catch (err) {
     console.error('[api/approvals] query failed:', err);
     return apiError({ status: 500, error: 'internal' });
   }
-
-  return apiOk(data);
 }

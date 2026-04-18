@@ -1,73 +1,105 @@
-// src/lib/sessions.ts — Session management service
-
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { createServiceRoleClient } from "@/lib/supabase";
-import type { Session, SessionWithMessages, AppendMessageInput } from "@aegis/types";
-
-// ── createSession ─────────────────────────────────────────────────────────────
+import type { AppendMessageInput, Message, Session, SessionWithMessages } from "@aegis/types";
+import { asIsoString, query, queryOne } from "@/lib/postgres";
 
 export type CreateSessionInput = {
   userId: string;
   openclawSessionId?: string;
 };
 
-export async function createSession(
-  input: CreateSessionInput,
-  client: SupabaseClient = createServiceRoleClient(),
-): Promise<Session> {
-  const { data, error } = await client
-    .from("sessions")
-    .insert({
-      user_id: input.userId,
-      title: null,
-      openclaw_session_id: input.openclawSessionId ?? null,
-    })
-    .select()
-    .single<Session>();
+type SessionRow = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  openclaw_session_id: string | null;
+  created_at: Date | string;
+  updated_at: Date | string;
+};
 
-  if (error) throw new Error(`createSession failed: ${error.message}`);
-  if (!data) throw new Error("createSession returned no data");
+type MessageRow = {
+  id: string;
+  session_id: string;
+  role: Message["role"];
+  content: unknown;
+  tool_calls: unknown | null;
+  created_at: Date | string;
+};
 
-  return data;
-}
-
-// ── getSession ────────────────────────────────────────────────────────────────
-
-export async function getSession(
-  id: string,
-  client: SupabaseClient = createServiceRoleClient(),
-): Promise<SessionWithMessages | null> {
-  const { data: sessionData, error: sessionError } = await client
-    .from("sessions")
-    .select("*")
-    .eq("id", id)
-    .single<Session>();
-
-  if (sessionError) {
-    if (sessionError.code === "PGRST116") return null;
-    throw new Error(`getSession failed: ${sessionError.message}`);
-  }
-  if (!sessionData) return null;
-
-  // Fetch last 50 messages ordered by created_at ASC
-  const { data: messagesData, error: messagesError } = await client
-    .from("messages")
-    .select("*")
-    .eq("session_id", id)
-    .order("created_at", { ascending: true })
-    .limit(50);
-
-  if (messagesError) throw new Error(`getSession messages failed: ${messagesError.message}`);
-
+function mapSession(row: SessionRow): Session {
   return {
-    ...sessionData,
-    messages: messagesData ?? [],
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    openclaw_session_id: row.openclaw_session_id,
+    created_at: asIsoString(row.created_at),
+    updated_at: asIsoString(row.updated_at),
   };
 }
 
-// ── listSessions ──────────────────────────────────────────────────────────────
+function mapMessage(row: MessageRow): Message {
+  return {
+    id: row.id,
+    session_id: row.session_id,
+    role: row.role,
+    content: row.content,
+    tool_calls: row.tool_calls,
+    created_at: asIsoString(row.created_at),
+  };
+}
+
+export async function createSession(
+  input: CreateSessionInput,
+  _client?: unknown,
+): Promise<Session> {
+  const row = await queryOne<SessionRow>(
+    `
+      insert into sessions (
+        user_id,
+        title,
+        openclaw_session_id
+      )
+      values ($1, null, $2)
+      returning *
+    `,
+    [input.userId, input.openclawSessionId ?? null],
+  );
+
+  if (!row) throw new Error("createSession returned no data");
+  return mapSession(row);
+}
+
+export async function getSession(
+  id: string,
+  _client?: unknown,
+): Promise<SessionWithMessages | null> {
+  const sessionRow = await queryOne<SessionRow>(
+    `
+      select *
+      from sessions
+      where id = $1
+    `,
+    [id],
+  );
+
+  if (!sessionRow) return null;
+
+  const messageRows = await query<MessageRow>(
+    `
+      select *
+      from messages
+      where session_id = $1
+      order by created_at asc
+      limit 50
+    `,
+    [id],
+  );
+
+  return {
+    ...mapSession(sessionRow),
+    messages: messageRows.map(mapMessage),
+  };
+}
 
 export type ListSessionsInput = {
   userId?: string;
@@ -76,82 +108,99 @@ export type ListSessionsInput = {
 
 export async function listSessions(
   input: ListSessionsInput = {},
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<Session[]> {
-  const limit = input.limit ?? 20;
-
-  let query = client
-    .from("sessions")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const params: unknown[] = [];
+  const where: string[] = [];
 
   if (input.userId) {
-    query = query.eq("user_id", input.userId);
+    params.push(input.userId);
+    where.push(`user_id = $${params.length}`);
   }
 
-  const { data, error } = await query.returns<Session[]>();
+  params.push(input.limit ?? 20);
+  const whereClause = where.length > 0 ? `where ${where.join(" and ")}` : "";
 
-  if (error) throw new Error(`listSessions failed: ${error.message}`);
-  return data ?? [];
+  const rows = await query<SessionRow>(
+    `
+      select *
+      from sessions
+      ${whereClause}
+      order by created_at desc
+      limit $${params.length}
+    `,
+    params,
+  );
+
+  return rows.map(mapSession);
 }
-
-// ── appendMessages ────────────────────────────────────────────────────────────
 
 export async function appendMessages(
   sessionId: string,
   messages: AppendMessageInput[],
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<number> {
   if (messages.length === 0) return 0;
 
-  const rows = messages.map((m) => ({
-    session_id: sessionId,
-    role: m.role,
-    content: m.content,
-    tool_calls: m.tool_calls ?? null,
-  }));
+  const params: unknown[] = [];
+  const values: string[] = [];
 
-  const { data, error } = await client.from("messages").insert(rows).select("id");
+  messages.forEach((message, index) => {
+    const base = index * 4;
+    params.push(
+      sessionId,
+      message.role,
+      JSON.stringify(message.content),
+      message.tool_calls === undefined ? null : JSON.stringify(message.tool_calls),
+    );
+    values.push(
+      `($${base + 1}, $${base + 2}, $${base + 3}::jsonb, $${base + 4}::jsonb)`,
+    );
+  });
 
-  if (error) throw new Error(`appendMessages failed: ${error.message}`);
+  const inserted = await query<{ id: string }>(
+    `
+      insert into messages (
+        session_id,
+        role,
+        content,
+        tool_calls
+      )
+      values ${values.join(", ")}
+      returning id
+    `,
+    params,
+  );
 
-  // Also bump updated_at on the parent session
-  await client
-    .from("sessions")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", sessionId);
+  await query(
+    `
+      update sessions
+      set updated_at = now()
+      where id = $1
+    `,
+    [sessionId],
+  );
 
-  return data?.length ?? 0;
+  return inserted.length;
 }
 
-// ── autoTitleIfFirstMessage ───────────────────────────────────────────────────
-
-/**
- * If session.title is null, generates a 4-7 word title via gpt-4o-mini and writes it back.
- * Idempotent: if title is already set, returns immediately without calling the model.
- */
 export async function autoTitleIfFirstMessage(
   sessionId: string,
   firstUserPrompt: string,
-  client: SupabaseClient = createServiceRoleClient(),
+  _client?: unknown,
 ): Promise<void> {
-  // Check current title
-  const { data: session, error: fetchError } = await client
-    .from("sessions")
-    .select("title")
-    .eq("id", sessionId)
-    .single<Pick<Session, "title">>();
+  const session = await queryOne<Pick<SessionRow, "title">>(
+    `
+      select title
+      from sessions
+      where id = $1
+    `,
+    [sessionId],
+  );
 
-  if (fetchError) {
-    if (fetchError.code === "PGRST116") return; // session not found, skip silently
-    throw new Error(`autoTitleIfFirstMessage fetch failed: ${fetchError.message}`);
-  }
+  if (!session) return;
+  if (session.title) return;
 
-  // Idempotent: title already set → skip
-  if (session?.title) return;
-
-  // Generate title with gpt-4o-mini
   let title: string;
   try {
     const result = await generateText({
@@ -160,39 +209,45 @@ export async function autoTitleIfFirstMessage(
     });
     title = result.text.trim().slice(0, 80);
   } catch {
-    // Best-effort — do not fail the caller if AI is unavailable
     return;
   }
 
   if (!title) return;
 
-  const { error: updateError } = await client
-    .from("sessions")
-    .update({ title, updated_at: new Date().toISOString() })
-    .eq("id", sessionId);
-
-  if (updateError) throw new Error(`autoTitleIfFirstMessage update failed: ${updateError.message}`);
+  await query(
+    `
+      update sessions
+      set title = $2,
+          updated_at = now()
+      where id = $1
+    `,
+    [sessionId, title],
+  );
 }
 
-// ── cleanupExpired ────────────────────────────────────────────────────────────
-
-/**
- * Deletes sessions whose updated_at is older than `daysOld` days.
- * Cascade deletes messages via FK. Returns the number of deleted sessions.
- * Called by the pg-boss `session.cleanup` job (worker registers the job handler).
- */
-export async function cleanupExpired(
-  daysOld = 7,
-  client: SupabaseClient = createServiceRoleClient(),
-): Promise<number> {
+export async function cleanupExpired(daysOld = 7, _client?: unknown): Promise<number> {
   const cutoff = new Date(Date.now() - daysOld * 86_400_000).toISOString();
+  const rows = await query<{ id: string }>(
+    `
+      delete from sessions
+      where updated_at < $1
+      returning id
+    `,
+    [cutoff],
+  );
 
-  const { data, error } = await client
-    .from("sessions")
-    .delete()
-    .lt("updated_at", cutoff)
-    .select("id");
+  return rows.length;
+}
 
-  if (error) throw new Error(`cleanupExpired failed: ${error.message}`);
-  return data?.length ?? 0;
+export async function deleteSession(id: string): Promise<boolean> {
+  const row = await queryOne<{ id: string }>(
+    `
+      delete from sessions
+      where id = $1
+      returning id
+    `,
+    [id],
+  );
+
+  return Boolean(row);
 }
