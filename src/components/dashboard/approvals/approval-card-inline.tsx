@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { throwIfError } from '@/lib/api';
+import { throwIfError } from '@/lib/api-client';
 import { ApprovalSafetyBadge } from './approval-safety-badge';
 import { ApprovalCardFull } from './approval-card-full';
 

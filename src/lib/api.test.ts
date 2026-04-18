@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { apiOk, apiError, throwIfError } from "./api";
+import { throwIfError } from "./api-client";
+import { apiOk, apiError } from "./api";
 import { runWithRequestContext } from "./request-context";
 
 describe("apiOk", () => {

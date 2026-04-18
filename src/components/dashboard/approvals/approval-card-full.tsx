@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { throwIfError } from '@/lib/api';
+import { throwIfError } from '@/lib/api-client';
 import { ApprovalArgsDiff } from './approval-args-diff';
 import { ApprovalSafetyBadge } from './approval-safety-badge';
 

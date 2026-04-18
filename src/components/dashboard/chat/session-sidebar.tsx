@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { Session } from '@aegis/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { throwIfError } from '@/lib/api';
+import { throwIfError } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
 interface SessionSidebarProps {
