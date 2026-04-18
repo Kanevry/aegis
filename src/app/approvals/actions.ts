@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import {
   resolveRuntimeApprovalRequest,
   runtimeApprovalDecisionSchema,
@@ -20,5 +21,5 @@ export async function resolveApprovalAction(formData: FormData) {
 
   revalidatePath("/approvals");
   revalidatePath(`/approvals/${approvalId}`);
-  redirect(`/approvals/${encodeURIComponent(approvalId)}?resolved=${encodeURIComponent(decision)}`);
+  redirect(`/approvals/${encodeURIComponent(approvalId)}?resolved=${encodeURIComponent(decision)}` as Route<string>);
 }

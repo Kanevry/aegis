@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Route } from "next";
 import { resolveApprovalAction } from "../actions";
 import {
   ensureOpenclawRuntimeBridgeStarted,
@@ -58,7 +59,7 @@ export default async function ApprovalDetailPage(
             <h1 className="mt-2 text-2xl font-semibold">OpenClaw Exec Approval</h1>
           </div>
           <Link
-            href="/approvals"
+            href={"/approvals" as Route<string>}
             className="rounded border border-neutral-800 px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-700 hover:text-white"
           >
             Back to queue

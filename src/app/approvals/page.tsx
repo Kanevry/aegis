@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import {
   ensureOpenclawRuntimeBridgeStarted,
   expirePendingRuntimeApprovals,
@@ -55,7 +56,7 @@ export default async function ApprovalsPage() {
             items.map((item) => (
               <Link
                 key={item.approvalId}
-                href={item.uiUrl}
+                href={item.uiUrl as Route<string>}
                 className="rounded-2xl border border-neutral-800 bg-neutral-900/80 p-5 transition hover:border-neutral-700 hover:bg-neutral-900"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">

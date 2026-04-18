@@ -667,7 +667,7 @@ async function callGatewayRpc<T = unknown>(method: string, params: unknown): Pro
       reject(new Error(`OpenClaw RPC timed out: ${method}`));
     }, 15_000);
     timeout.unref?.();
-    state.pendingRpc.set(id, { resolve, reject, timeout });
+    state.pendingRpc.set(id, { resolve: resolve as (value: unknown) => void, reject, timeout });
   });
 
   state.socket.send(
