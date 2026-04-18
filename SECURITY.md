@@ -4,10 +4,10 @@ Aegis is a public repository. This policy explains how to report vulnerabilities
 
 ## Supported versions
 
-| Version | Supported |
-|---------|-----------|
-| `0.1.x` | Yes |
-| `< 0.1.0` | No |
+| Version   | Supported |
+| --------- | --------- |
+| `0.1.x`   | Yes       |
+| `< 0.1.0` | No        |
 
 Pre-release branches and experimental hackathon snapshots may receive best-effort fixes only.
 
@@ -54,6 +54,7 @@ Out of scope:
 - Any exposed credential should be rotated immediately, documented in the incident thread, and removed from logs or screenshots where possible.
 - Gitleaks runs on every pull request and push through [`.github/workflows/secret-scan.yml`](./.github/workflows/secret-scan.yml) with the repo-specific rules in [`.gitleaks.toml`](./.gitleaks.toml). Findings fail CI and upload a report artifact for triage.
 - Demo credentials should be short-lived and rotated after public demos, releases, or suspected exposure.
+- Published releases should include a CycloneDX SBOM artifact so downstream users can inspect shipped dependencies. Repository automation for this is tracked in [#81](https://github.com/Kanevry/aegis/issues/81).
 
 ## Scanner remediation flow
 
@@ -89,12 +90,12 @@ Out of scope:
 
 The middleware currently maps to the OWASP LLM Top 10 concerns it was built to address:
 
-| Layer | OWASP LLM |
-|-------|-----------|
-| B1 Paths | LLM06 Sensitive Information Disclosure |
-| B2 PII | LLM06 Sensitive Information Disclosure |
-| B3 Refs | LLM09 Overreliance |
-| B4 Injection | LLM01 Prompt Injection |
-| B5 Redaction | LLM02 Insecure Output Handling |
+| Layer        | OWASP LLM                              |
+| ------------ | -------------------------------------- |
+| B1 Paths     | LLM06 Sensitive Information Disclosure |
+| B2 PII       | LLM06 Sensitive Information Disclosure |
+| B3 Refs      | LLM09 Overreliance                     |
+| B4 Injection | LLM01 Prompt Injection                 |
+| B5 Redaction | LLM02 Insecure Output Handling         |
 
 Contributions that extend coverage to additional threat classes are welcome. See also [CONTRIBUTING.md](./CONTRIBUTING.md) for the contribution workflow.
