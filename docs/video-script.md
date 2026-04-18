@@ -14,11 +14,6 @@ The safest plan is:
 
 This document includes both.
 
-Current runtimes:
-
-- Submission cut: **1:30**
-- Extended cut: **2:00**
-
 ---
 
 ## Recording Notes
@@ -26,24 +21,11 @@ Current runtimes:
 - Do not use the `Overview` page as a hero shot yet; it still reads like placeholder telemetry.
 - Use the strongest product surfaces: `Testbed`, `Flow`, `Compare`, `Eval`, and a separate Sentry browser tab.
 - Do not rely on the Sentry link in the dashboard header during recording; open Sentry in its own tab ahead of time.
-- Treat OpenClaw as **partially shipped Phase 2**, not just roadmap:
-  - closed and documented: runtime contract `#65`, approval epic `#31`, client `#39`, chat stream `#40`, webhook ingress `#44`, resolve flow `#47`, setup runbook `#86`
-  - still open: umbrella epic `#32`, full chat UI `#41`, approval cards `#48`, approvals queue `#49`, Discord fan-out `#50`, fuller Docker/devops coverage `#36`
-- We should **show OpenClaw in action**, not only mention it:
-  - best shot: `Dashboard -> Chat`, create a new session, switch provider to `OpenClaw`, send a prompt, then cut to `Dashboard -> Approvals`
-  - safest fallback: show the `OpenClaw` provider streaming in Chat, then cut to an already mirrored pending approval in `Approvals`
-- If the live OpenClaw tool-call trigger is flaky, keep the issue board and `docs/OPENCLAW_SETUP.md` as backup context rather than the primary beat.
 - Use one clear attack for the main story:
   - `path-traversal-001` for the cleanest block story
   - `prompt-injection-001` for the compare view
 - Keep zoom level large enough that blocked layers and status badges are readable in a screen recording.
 - Add captions, because the submission should work without audio.
-
-## macOS Recording Setup
-
-- Best overall for this style of polished product demo: **Screen Studio**
-- Best built-in fallback with zero setup: **QuickTime / macOS Screenshot**
-- Best free power-user option: **OBS Studio**
 
 ---
 
@@ -199,26 +181,22 @@ Current runtimes:
 
 "Phase 1: ship the shield"
 
-### 0:35-0:48 — OpenClaw In Action
+### 0:35-0:45 — Roadmap Continuity
 
 **Voiceover**
 
-"Phase 2 is already visible in the product. Here the chat runs through OpenClaw, and risky actions can be surfaced as explicit approvals instead of hidden agent behavior."
+"The development story does not stop at the demo. Phase 2 is already mapped out: chat, approvals, OpenClaw integration, and richer Sentry workflows."
 
 **Show**
 
-- Go to `Dashboard -> Chat`
-- Click `+` to create a new session
-- Switch provider to `OpenClaw`
-- Send one safe prompt so the OpenClaw provider is visibly selected and responding
-- If your local stack reliably emits an approval, cut immediately to `Dashboard -> Approvals` and open the pending request
-- If not, cut to a pre-seeded pending approval and show the detail card with the decision buttons
+- Show open epic `#32`
+- Scroll just enough to reveal chat, approval, and observability slices
 
 **Caption**
 
-"OpenClaw chat and approval flow"
+"Phase 2: operator-facing agent oversight"
 
-### 0:48-1:05 — Testbed Demo
+### 0:45-1:05 — Testbed Demo
 
 **Voiceover**
 
@@ -304,13 +282,12 @@ If time is tight, record these in order:
 
 1. Home page or README hero
 2. GitHub issues list with closed Phase 1 work
-3. Dashboard `Chat` with provider switched to `OpenClaw`
-4. Dashboard `Approvals` showing a pending request and the decision surface
-5. Dashboard `Testbed` firing `path-traversal-001`
-6. Dashboard `Flow`
-7. Dashboard `Compare` with `prompt-injection-001`
-8. Dashboard `Eval`
-9. Sentry issue or trace tab
+3. GitHub issue `#32` Phase 2 epic
+4. Dashboard `Testbed` firing `path-traversal-001`
+5. Dashboard `Flow`
+6. Dashboard `Compare` with `prompt-injection-001`
+7. Dashboard `Eval`
+8. Sentry issue or trace tab
 
 ---
 

@@ -2,18 +2,27 @@ project_id = "aegis"
 
 [api]
 enabled = true
-port = 54321
+port = 56321
 schemas = ["public", "storage"]
 extra_search_path = ["public", "extensions"]
 
 [db]
-port = 54322
-shadow_port = 54320
+port = 56322
+shadow_port = 56320
 major_version = 15
 
 [studio]
 enabled = true
-port = 54323
+port = 56323
+
+[inbucket]
+enabled = true
+port = 56324
+smtp_port = 56325
+pop3_port = 56326
+
+[analytics]
+enabled = false
 
 [auth]
 enabled = true

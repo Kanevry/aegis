@@ -29,8 +29,8 @@ rules:
       - javascript
     paths:
       include:
-        - /src/**/*.tsx
-        - /src/instrumentation-client.ts
+        - src/**/*.tsx
+        - src/instrumentation-client.ts
     patterns:
       - pattern: process.env.$VAR
       - metavariable-regex:

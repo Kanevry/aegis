@@ -52,4 +52,7 @@ npm-debug.log*
 # OpenClaw auth seed secrets
 docker/openclaw-auth-seed/auth-profiles.json
 docker/openclaw-auth-seed/auth.json
-/.har/
+
+# Supabase CLI ephemeral state
+supabase/.branches/
+supabase/.temp/
