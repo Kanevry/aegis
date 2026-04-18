@@ -52,8 +52,24 @@ Out of scope:
 - Secrets belong in `.env.local`, platform secret stores, or the deployment environment. They must never be committed to the repo.
 - Access to production or demo secrets should be limited to the smallest maintainer set required to operate the project.
 - Any exposed credential should be rotated immediately, documented in the incident thread, and removed from logs or screenshots where possible.
-- Secret scanning is expected on every change set. Repository-level enforcement via Gitleaks CI is tracked in [#79](https://github.com/Kanevry/aegis/issues/79); until then, contributors must rely on local review plus GitHub scanning and keep the repo free of live credentials.
+- Gitleaks runs on every pull request and push through [`.github/workflows/secret-scan.yml`](./.github/workflows/secret-scan.yml) with the repo-specific rules in [`.gitleaks.toml`](./.gitleaks.toml). Findings fail CI and upload a report artifact for triage.
 - Demo credentials should be short-lived and rotated after public demos, releases, or suspected exposure.
+
+## Scanner remediation flow
+
+### Secret scan findings
+
+- Revoke or rotate the credential first if the finding corresponds to a real secret.
+- Remove the secret from the current tree and any affected history before merging.
+- Re-run the secret scan locally or via CI and keep the artifact for the incident thread when useful.
+- If a finding is a false positive, narrow the allowlist in [`.gitleaks.toml`](./.gitleaks.toml) to the smallest possible path or pattern and explain the exception in the PR.
+
+### SAST findings
+
+- Semgrep runs on every pull request and on pushes to `main` through [`.github/workflows/semgrep.yml`](./.github/workflows/semgrep.yml).
+- Community rulesets cover TypeScript, Node.js, secrets, and the OWASP Top 10. Repo-specific checks live in [`.semgrep.yml`](./.semgrep.yml), and the scan uploads SARIF into the GitHub Security tab.
+- Treat new `ERROR` findings as merge blockers. Fix the code, or add a narrowly scoped suppression with a justification when the pattern is intentional and safe.
+- Keep [`.semgrepignore`](./.semgrepignore) limited to generated artifacts and machine output. Do not use it to hide live application findings.
 - Published releases should include a CycloneDX SBOM artifact so downstream users can inspect shipped dependencies. Repository automation for this is tracked in [#81](https://github.com/Kanevry/aegis/issues/81).
 
 ## Security boundaries

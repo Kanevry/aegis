@@ -1,0 +1,15 @@
+title = "Aegis gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Runtime-built test fixtures that intentionally avoid storing live-looking secrets in source"
+paths = [
+  '''^packages/hardening/tests/redaction\.test\.ts$''',
+  '''^src/lib/sentry\.test\.ts$''',
+]
+regexes = [
+  '''\[REDACTED:(OPENAI_KEY|ANTHROPIC_KEY|GITHUB_PAT|GITLAB_PAT)\]''',
+  '''(OPENAI_PREFIX|ANTHROPIC_PREFIX|ANTHROPIC_LEGACY_PREFIX|GITHUB_PREFIX|GITLAB_PREFIX)''',
+]
