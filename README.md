@@ -76,7 +76,7 @@ Copy `.env.example` → `.env.local` and fill the keys below. Never commit `.env
 | Variable | Required | Purpose |
 |---|---|---|
 | `OPENAI_API_KEY` | yes | Primary LLM provider (`gpt-4o-mini` default) |
-| `ANTHROPIC_API_KEY` | for compare | A/B variants (`claude-haiku-4-5-20251001`) |
+| `ANTHROPIC_API_KEY` | for compare | Optional Claude-based A/B variants (`claude-haiku-4-5-20251001`) |
 | `NEXT_PUBLIC_SENTRY_DSN` | yes | Client + server DSN — must match the org you are logged into (see **DSN org check**) |
 | `SENTRY_DSN` | yes | Same value as `NEXT_PUBLIC_SENTRY_DSN` |
 | `SENTRY_AUTH_TOKEN` | for source-maps | Only for build-time source-map upload; dev works without |
@@ -86,6 +86,8 @@ Copy `.env.example` → `.env.local` and fill the keys below. Never commit `.env
 | `AEGIS_LAYER_B1_PATHS` … `B5_REDACTION` | optional | `true`/`false` per layer; all default `true` |
 
 See `.env.example` for the full list (Gemini, OpenRouter, Supabase, pg-boss, OpenClaw gateway, Discord fan-out, Upstash).
+
+Anthropic support is optional and is only used for Claude-based A/B testing and provider comparison views; the default agent flow runs on OpenAI.
 
 ### Provision a Sentry project (first time)
 
