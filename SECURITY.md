@@ -1,32 +1,76 @@
 # Security Policy
 
-This project was built in a 6-hour window as a hackathon entry. It is shared under MIT for the community to learn from and build on.
+Aegis is a public repository. This policy explains how to report vulnerabilities, what is in scope, and the current security boundaries for the project and any published `@aegis/*` packages.
 
-## Reporting
+## Supported versions
 
-If you find a security issue, please **open a private security advisory on GitHub** rather than a public issue. For the fastest response, include:
+| Version | Supported |
+|---------|-----------|
+| `0.1.x` | Yes |
+| `< 0.1.0` | No |
 
-- Affected component (hardening layer, API route, or middleware)
-- Reproduction steps
-- Proposed severity (Low / Medium / High / Critical)
+Pre-release branches and experimental hackathon snapshots may receive best-effort fixes only.
 
-We aim to acknowledge within 48h and respond with a plan within one week.
+## Reporting a vulnerability
+
+Please **open a private GitHub security advisory** instead of filing a public issue.
+
+Include:
+
+- affected package, route, or deployment surface
+- clear reproduction steps or proof of concept
+- impact assessment and prerequisites
+- any logs, traces, or screenshots that help us confirm the issue
+
+Response targets:
+
+- acknowledgement within 24 hours
+- triage decision within 7 calendar days
+- coordinated remediation timeline after triage, depending on severity
+
+If GitHub Advisories are unavailable for some reason, contact the maintainers privately through the repository owner before disclosing details elsewhere.
 
 ## Scope
 
 In scope:
-- The `@aegis/hardening` package (paths, PII, refs, injection, redaction)
-- The `/api/agent/run` server action
-- Sentry instrumentation (span attributes, fingerprinting, `beforeSend` redaction)
+
+- code in this repository
+- published `@aegis/*` packages derived from this repository
+- Next.js API routes, middleware, and hardening layers
+- Sentry instrumentation, masking, fingerprints, and `beforeSend` redaction
+- default deployment manifests and sample configs shipped in the repo
 
 Out of scope:
-- Upstream provider security (OpenAI, Anthropic, Sentry SaaS)
-- Deployment environment (Vercel, any self-hosted mirrors)
-- Third-party dependencies — please report upstream
 
-## Standards
+- user-operated OpenClaw deployments, Discord bots, or webhook infrastructure
+- upstream provider vulnerabilities in OpenAI, Anthropic, Sentry, Supabase, Vercel, or GitHub
+- local developer machines, browsers, or secrets managers outside this repo
+- social engineering, denial-of-wallet, or prompt quality complaints without a concrete security impact
 
-The middleware defends against the OWASP LLM Top 10 categories it was designed for:
+## Secrets handling policy
+
+- Secrets belong in `.env.local`, platform secret stores, or the deployment environment. They must never be committed to the repo.
+- Access to production or demo secrets should be limited to the smallest maintainer set required to operate the project.
+- Any exposed credential should be rotated immediately, documented in the incident thread, and removed from logs or screenshots where possible.
+- Secret scanning is expected on every change set. Repository-level enforcement via Gitleaks CI is tracked in [#79](https://github.com/Kanevry/aegis/issues/79); until then, contributors must rely on local review plus GitHub scanning and keep the repo free of live credentials.
+- Demo credentials should be short-lived and rotated after public demos, releases, or suspected exposure.
+
+## Security boundaries
+
+- The single-user passphrase flow planned for Phase 2 is an operator gate, not multi-tenant authentication. It protects access to a demo/operator console but is not a substitute for per-user identity and authorization.
+- The OpenClaw token is operator-level access. Anyone holding it can act on behalf of the integration and should be treated as privileged.
+- Hardening layers reduce risk; they do not guarantee perfect prevention of prompt injection, data leakage, or unsafe tool use.
+- Safe client responses matter. Internal stack traces, raw provider errors, and unredacted secrets should stay server-side.
+
+## Disclosure and remediation
+
+- We prefer coordinated disclosure and will work with reporters on a reasonable publication timeline.
+- Critical issues may trigger immediate mitigation before a full patch is ready.
+- We will credit reporters who want attribution once the issue is resolved.
+
+## Relevant standards
+
+The middleware currently maps to the OWASP LLM Top 10 concerns it was built to address:
 
 | Layer | OWASP LLM |
 |-------|-----------|
@@ -36,4 +80,4 @@ The middleware defends against the OWASP LLM Top 10 categories it was designed f
 | B4 Injection | LLM01 Prompt Injection |
 | B5 Redaction | LLM02 Insecure Output Handling |
 
-Contributions that extend the layer set to other LLM-Top-10 categories are welcome.
+Contributions that extend coverage to additional threat classes are welcome. See also [CONTRIBUTING.md](./CONTRIBUTING.md) for the contribution workflow.

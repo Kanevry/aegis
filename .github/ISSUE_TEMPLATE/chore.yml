@@ -1,0 +1,34 @@
+name: Chore
+description: Track maintenance, cleanup, or repository health work.
+title: "chore: "
+labels:
+  - type:chore
+body:
+  - type: textarea
+    id: intent
+    attributes:
+      label: Intent
+      description: What maintenance goal does this chore support?
+      placeholder: This chore keeps the repo healthy by...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Describe the concrete changes included in this chore.
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Any breaking changes?
+      description: Say whether this chore changes public APIs, required env vars, or operational behavior.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true

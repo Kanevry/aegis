@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a product or developer-facing improvement.
+title: "feat: "
+labels:
+  - enhancement
+  - type:feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or team problem are we trying to solve?
+      placeholder: The current experience makes it hard to...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the preferred solution and the shape of the change.
+      placeholder: We should add...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List alternatives, tradeoffs, or reasons for not choosing them.
+      placeholder: We also considered...
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope (in / out)
+      description: Clarify what is in scope and explicitly out of scope for this issue.
+      placeholder: |
+        In scope:
+        - ...
+
+        Out of scope:
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List the observable conditions that mean this issue is done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
