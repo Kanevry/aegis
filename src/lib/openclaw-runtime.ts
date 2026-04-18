@@ -580,7 +580,7 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
     return await state.connectPromise;
   }
 
-  const { apiToken, baseURL, origin } = resolveOpenclawGatewayConfig();
+  const { apiToken, baseURL } = resolveOpenclawGatewayConfig();
   if (!apiToken) {
     throw new Error("OpenClaw gateway token is not configured for bridge startup");
   }
@@ -593,11 +593,7 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
   void state.connectPromise.catch(() => undefined);
 
   const wsUrl = toGatewayWsUrl(baseURL);
-  const socket = new WebSocket(wsUrl, {
-    headers: {
-      origin,
-    },
-  });
+  const socket = new WebSocket(wsUrl);
   state.socket = socket;
 
   const timeout = setTimeout(() => {

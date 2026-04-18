@@ -29,19 +29,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: 'invalid_signature' }, { status: 401 });
   }
 
-  let parsed: ReturnType<typeof openclawEventSchema.parse>;
+  let payload: unknown;
   try {
-    parsed = openclawEventSchema.parse(JSON.parse(raw));
-  } catch (err) {
+    payload = JSON.parse(raw);
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: 'invalid_payload' },
+      { status: 400 },
+    );
+  }
+
+  const parsedResult = openclawEventSchema.safeParse(payload);
+  if (!parsedResult.success) {
     return NextResponse.json(
       {
         ok: false,
         error: 'invalid_payload',
-        issues: err instanceof Error ? err.message : String(err),
+        issues: parsedResult.error.issues,
       },
       { status: 400 },
     );
   }
+
+  const parsed = parsedResult.data;
 
   return Sentry.startSpan(
     {

@@ -61,11 +61,9 @@ export async function POST(
       decision: resolved.decision,
     });
   } catch (error) {
+    void error;
     return NextResponse.json(
-      {
-        error: "openclaw_resolution_failed",
-        message: error instanceof Error ? error.message : String(error),
-      },
+      { error: "openclaw_resolution_failed" },
       { status: 502 },
     );
   }
