@@ -2,9 +2,20 @@
 
 **Five-layer defense middleware for OpenAI agents. Every violation becomes a Sentry exception. Seer analyzes it like a production bug.**
 
-**Live demo:** https://aegis-codex.vercel.app _(live 2026-04-18 ~17:00 CEST — placeholder until H6 deploy)_
+**Live demo:** https://aegis-codex.vercel.app
+**Repo:** https://github.com/Kanevry/aegis
 
 Built during the [Codex Community Hackathon Vienna 2026-04-18](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18) in a 6-hour window.
+
+---
+
+## Hackathon Submission
+
+- **Live demo:** https://aegis-codex.vercel.app
+- **Demo video:** {{VIDEO_URL}}
+- **Submission description:** [`docs/submission-description.md`](docs/submission-description.md)
+
+Open the live demo → click Testbed → fire any attack. Observe Flow visualization + Sentry issue link in real time.
 
 ---
 
@@ -56,7 +67,7 @@ pnpm dev
 # App running at http://localhost:3000
 ```
 
-Optional event fan-out to Telegram/Discord/Slack — see `.env.example` for `AEGIS_NOTIFICATION_*` keys.
+Optional event fan-out to Discord — see `.env.example` for `DISCORD_WEBHOOK_URL`.
 
 ---
 

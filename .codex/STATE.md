@@ -2,9 +2,9 @@
 schema-version: 1
 session-type: feature
 branch: main
-issues: [15, 3, 6]
-started_at: 2026-04-18T12:20:03+0200
-completed_at: 2026-04-18T12:42:15+0200
+issues: [9, 11, 12, 14, 18]
+started_at: 2026-04-18T12:53:00+0200
+completed_at: 2026-04-18T13:20:00+0200
 status: completed
 current-wave: 5
 total-waves: 5
@@ -12,34 +12,29 @@ total-waves: 5
 
 ## Current Wave
 
-Wave 5 — Finalized
-
-Completed:
-- #15 feedback widget wired behind `AEGIS_SENTRY_FEEDBACK_WIDGET` with dark Sentry feedback integration on `/dashboard/testbed`.
-- #3 `/api/compare` implemented with stable variant payloads and shared compare service/types.
-- #6 `/dashboard/flow`, `/dashboard/compare`, and `/dashboard/eval` shipped and aligned with navigation.
-- Quality gates passed: `pnpm typecheck`, `pnpm lint`, `pnpm test --run`, `pnpm build`.
-- Runtime checks passed: `/dashboard/testbed`, `/dashboard/flow`, and `/dashboard/eval` returned 200; `/api/compare` returned 4 variants for direct prompt input.
+Wave 5 — Finalization (1 agent F1: session handover + human-action punchlist).
 
 ## Wave History
 
-- Wave 1 — Discovery
-  - Audited current Sentry browser integration and confirmed `feedbackIntegration`/`getFeedback` API shape from installed SDK types.
-  - Audited dashboard route gaps and compare/data contracts against `src/lib/attacks.ts`.
-- Wave 2 — Core implementation
-  - Added compare API, shared compare types/service, and dashboard route shells.
-  - Extracted the testbed client page and mounted the feedback widget via a server wrapper flag.
-- Wave 3 — UI wiring
-  - Implemented compare/flow client rendering with live `/api/compare` fetches.
-  - Implemented eval matrix rendering over seeded attack patterns.
-- Wave 4 — Quality
-  - Fixed Next 16 build config by adding `turbopack: {}` in `next.config.ts`.
-  - Marked `/dashboard/compare` and `/dashboard/flow` as dynamic to prevent build-time live LLM calls.
-- Wave 5 — Finalization
-  - Synced session state and verified final gate results.
+### Wave 1 — Discovery
+- D1 hardening gap audit: done.
+- D2 deploy + submission audit: done.
+
+### Wave 2 — Impl-Core
+- C1–C5: 184 new tests across 5 hardening modules → 215 tests total, all green.
+
+### Wave 3 — Impl-Polish
+- P1 coverage config + integration tests: done (13 integration tests in `src/index.test.ts`).
+- P2 submission docs + README + pitch outline: done.
+- P3 deploy runbook + E2E checklist + verify script: done.
+
+### Wave 4 — Quality
+- Q1 (coordinator inline): coverage **97.46%**, tests 304/304, typecheck 0, lint 0, bash syntax clean.
+- Q2 cross-doc: done — 2 minimal fixes (submission-description URL + README env-var ref).
 
 ## Deviations
 
-- The original wave plan proposed separate discovery/implementation subagents, but execution stayed local in one thread.
-- The compare/eval implementation uses a shared server-side compare service rather than a thinner route-only controller split.
-- Switching production builds to `next build --webpack` and gating Sentry artifact upload to deploy environments was required to keep local verification green while preserving sponsor-critical browser instrumentation.
+- [2026-04-18T12:53:00+0200] Session-wide: isolation=`none` — parallel session on main.
+- [2026-04-18T13:05:00+0200] Wave 3 P1 did NOT run `pnpm install` — parallel Zod 3→4 migration owned lock updates.
+- [2026-04-18T13:13:00+0200] Wave 4 Q1 rolled into coordinator verification; only Q2 dispatched. Added `**/coverage/**` to `eslint.config.mjs` ignores (out-of-plan but clearly Wave-3 side-effect).
+- [2026-04-18T13:15:00+0200] Parallel session committed Zod 4 + Phase 2 env-keys + Supabase schema during Wave 3. All 3 of my Wave 3 agents stayed within scope. Q2 reconciled two stale doc references introduced by parallel env changes.

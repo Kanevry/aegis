@@ -8,7 +8,7 @@ const config = [
     },
   },
   {
-    ignores: ['packages/**/node_modules/**', '**/*.tsbuildinfo'],
+    ignores: ['packages/**/node_modules/**', '**/*.tsbuildinfo', '**/coverage/**'],
   },
 ];
 
