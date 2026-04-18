@@ -20,7 +20,7 @@ export function getPool(): Pool {
     idleTimeoutMillis: 30_000,
   });
 
-  pool.on("error", (err) => {
+  pool.on("error", (err: Error) => {
     console.error("[postgres] pool error", err);
   });
 

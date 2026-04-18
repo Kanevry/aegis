@@ -69,6 +69,39 @@ export async function createSession(
   return mapSession(row);
 }
 
+export async function getOrCreateSessionByOpenclawSessionId(
+  input: {
+    userId: string;
+    openclawSessionId: string;
+    title?: string | null;
+  },
+  _client?: unknown,
+): Promise<Session> {
+  const row = await queryOne<SessionRow>(
+    `
+      insert into sessions (
+        user_id,
+        title,
+        openclaw_session_id
+      )
+      values ($1, $2, $3)
+      on conflict (openclaw_session_id)
+      do update
+      set
+        user_id = excluded.user_id,
+        updated_at = now()
+      returning *
+    `,
+    [input.userId, input.title ?? null, input.openclawSessionId],
+  );
+
+  if (!row) {
+    throw new Error("getOrCreateSessionByOpenclawSessionId returned no data");
+  }
+
+  return mapSession(row);
+}
+
 export async function getSession(
   id: string,
   _client?: unknown,

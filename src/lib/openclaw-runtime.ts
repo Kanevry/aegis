@@ -10,9 +10,17 @@ import {
 } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import * as Sentry from "@sentry/nextjs";
+import type { ApprovalDecision, ApprovalDecidedBy } from "@aegis/types";
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import {
+  syncApprovalProjectionStatus,
+  upsertApprovalProjection,
+} from "@/lib/approvals";
+import { DEMO_USER_ID } from "@/lib/auth";
+import { query } from "@/lib/postgres";
+import { getOrCreateSessionByOpenclawSessionId } from "@/lib/sessions";
 
 const STORE_DIR = path.join(os.tmpdir(), "aegis-openclaw-runtime");
 const STORE_PATH = path.join(STORE_DIR, "approval-requests.json");
@@ -398,15 +406,24 @@ async function mirrorGatewayApprovalResolved(payload: unknown) {
     return;
   }
 
-  store.approvals[data.id] = runtimeApprovalRecordSchema.parse({
+  const resolvedAtMs = typeof data.ts === "number" ? data.ts : nowMs();
+  const resolved = runtimeApprovalRecordSchema.parse({
     ...approval,
     status: decision.startsWith("allow") ? "approved" : "denied",
     decision,
     resolvedBy: data.resolvedBy ?? approval.resolvedBy,
-    resolvedAtMs: typeof data.ts === "number" ? data.ts : nowMs(),
+    resolvedAtMs,
     source: approval.source ?? "openclaw-gateway",
     lastBridgeError: null,
     updatedAtMs: nowMs(),
+  });
+  store.approvals[data.id] = resolved;
+  await persistRuntimeApprovalDecision({
+    approvalId: resolved.approvalId,
+    decision: resolved.decision ?? decision,
+    resolvedBy: resolved.resolvedBy,
+    source: resolved.source,
+    resolvedAtMs,
   });
   await writeStore(store);
 }
@@ -589,7 +606,15 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
   void state.connectPromise.catch(() => undefined);
 
   const wsUrl = toGatewayWsUrl(baseURL);
-  const socket = new WebSocket(wsUrl);
+  const WebSocketCtor = WebSocket as unknown as {
+    new (
+      url: string,
+      options?: {
+        headers?: Record<string, string>;
+      },
+    ): WebSocket;
+  };
+  const socket = new WebSocketCtor(wsUrl);
   state.socket = socket;
 
   const timeout = setTimeout(() => {
@@ -686,6 +711,145 @@ function toStoredStatus(decision: RuntimeApprovalDecision): RuntimeApprovalRecor
   return decision.startsWith("allow") ? "approved" : "denied";
 }
 
+function toDbDecisionScope(decision: RuntimeApprovalDecision): ApprovalDecision {
+  if (decision === "deny") {
+    return "deny-once";
+  }
+  return decision;
+}
+
+function toDbDecidedBy(source: string | null | undefined): ApprovalDecidedBy {
+  if (source?.includes("discord")) {
+    return "discord";
+  }
+  if (source?.includes("cli")) {
+    return "cli";
+  }
+  if (source?.includes("auto")) {
+    return "auto";
+  }
+  return "ui";
+}
+
+function resolveProjectionTool(record: RuntimeApprovalRequest) {
+  const tool = (record.systemRunPlan as { tool?: unknown } | null | undefined)?.tool;
+  return typeof tool === "string" && tool.trim() ? tool : "system.run";
+}
+
+function buildProjectionArgs(record: RuntimeApprovalRequest): Record<string, unknown> {
+  return {
+    command: record.commandText,
+    command_preview: record.commandPreview ?? null,
+    command_argv: record.commandArgv ?? [],
+    cwd: record.cwd ?? null,
+    env_keys: record.envKeys,
+    agent_id: record.agentId ?? null,
+    session_key: record.sessionKey ?? null,
+    node_id: record.nodeId ?? null,
+    host: record.host ?? null,
+    security: record.security ?? null,
+    ask: record.ask ?? null,
+  };
+}
+
+function resolveProjectionSessionKey(record: RuntimeApprovalRequest) {
+  if (record.sessionKey?.trim()) {
+    return record.sessionKey.trim();
+  }
+
+  const parts = [record.host, record.agentId, record.nodeId]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+  if (parts.length > 0) {
+    return `runtime:${parts.join(":")}`;
+  }
+
+  return `runtime:approval:${record.approvalId}`;
+}
+
+async function logRuntimeApprovalEvent(
+  eventType: "exec.approval.requested" | "exec.approval.resolved",
+  eventId: string,
+  payload: Record<string, unknown>,
+) {
+  await query(
+    `
+      insert into openclaw_events (
+        event_id,
+        event_type,
+        payload,
+        processed_at
+      )
+      values ($1, $2, $3::jsonb, now())
+      on conflict (event_id, event_type) do nothing
+    `,
+    [eventId, eventType, JSON.stringify(payload)],
+  );
+}
+
+async function persistRuntimeApprovalProjection(record: RuntimeApprovalRequest) {
+  const session = await getOrCreateSessionByOpenclawSessionId({
+    userId: process.env["AEGIS_RUNTIME_DEFAULT_USER_ID"]?.trim() || DEMO_USER_ID,
+    openclawSessionId: resolveProjectionSessionKey(record),
+  });
+
+  await upsertApprovalProjection({
+    id: record.approvalId,
+    session_id: session.id,
+    tool: resolveProjectionTool(record),
+    args: buildProjectionArgs(record),
+    system_run_plan: record.systemRunPlan ?? null,
+    created_at: new Date(record.createdAtMs).toISOString(),
+  });
+
+  await logRuntimeApprovalEvent("exec.approval.requested", `runtime:${record.approvalId}`, {
+    type: "exec.approval.requested",
+    approval_id: record.approvalId,
+    session_key: record.sessionKey ?? null,
+    tool: resolveProjectionTool(record),
+    args: buildProjectionArgs(record),
+    system_run_plan: record.systemRunPlan ?? null,
+    created_at_ms: record.createdAtMs,
+  });
+}
+
+async function persistRuntimeApprovalDecision(record: {
+  approvalId: string;
+  decision: RuntimeApprovalDecision;
+  resolvedBy: string | null;
+  source: string | null;
+  resolvedAtMs: number;
+}) {
+  await syncApprovalProjectionStatus({
+    id: record.approvalId,
+    status: toStoredStatus(record.decision),
+    decision_scope: toDbDecisionScope(record.decision),
+    decided_by: toDbDecidedBy(record.source ?? record.resolvedBy),
+    decided_at: new Date(record.resolvedAtMs).toISOString(),
+  });
+
+  await logRuntimeApprovalEvent("exec.approval.resolved", `runtime:${record.approvalId}`, {
+    type: "exec.approval.resolved",
+    approval_id: record.approvalId,
+    decision: toDbDecisionScope(record.decision),
+    decided_by: toDbDecidedBy(record.source ?? record.resolvedBy),
+    decided_at_ms: record.resolvedAtMs,
+    resolved_by: record.resolvedBy,
+    source: record.source,
+  });
+}
+
+async function persistRuntimeApprovalExpiration(approvalId: string) {
+  await syncApprovalProjectionStatus({
+    id: approvalId,
+    status: "expired",
+    decision_scope: null,
+    decided_by: null,
+    decided_at: null,
+    reason: "Approval expired before Ægis received a decision.",
+  });
+}
+
 export function authorizeOpenclawRuntimeRequest(req: NextRequest) {
   const expectedToken = process.env["AEGIS_SHARED_TOKEN"]?.trim();
   if (!expectedToken) {
@@ -724,6 +888,7 @@ export async function upsertRuntimeApprovalRequest(
     uiUrl: existing?.uiUrl ?? buildUiUrl(parsed.approvalId),
   });
 
+  await persistRuntimeApprovalProjection(parsed);
   store.approvals[parsed.approvalId] = nextRecord;
   await writeStore(store);
 
@@ -796,6 +961,13 @@ export async function resolveRuntimeApprovalRequest(input: {
           updatedAtMs: nowMs(),
         });
 
+        await persistRuntimeApprovalDecision({
+          approvalId: resolved.approvalId,
+          decision: resolved.decision ?? input.decision,
+          resolvedBy: resolved.resolvedBy,
+          source: resolved.source,
+          resolvedAtMs: resolved.resolvedAtMs ?? nowMs(),
+        });
         store.approvals[input.approvalId] = resolved;
         await writeStore(store);
         return resolved;
@@ -839,6 +1011,7 @@ export async function expireRuntimeApprovalIfNeeded(
     status: "expired",
     updatedAtMs: nowMs(),
   });
+  await persistRuntimeApprovalExpiration(approvalId);
   store.approvals[approvalId] = expired;
   await writeStore(store);
   return expired;
@@ -851,6 +1024,7 @@ export async function expirePendingRuntimeApprovals(): Promise<void> {
 
   for (const approval of Object.values(store.approvals)) {
     if (approval.status === "pending" && approval.expiresAtMs <= cutoff) {
+      await persistRuntimeApprovalExpiration(approval.approvalId);
       store.approvals[approval.approvalId] = runtimeApprovalRecordSchema.parse({
         ...approval,
         status: "expired",

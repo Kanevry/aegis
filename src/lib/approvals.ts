@@ -18,6 +18,15 @@ export type CreateApprovalInput = {
   system_run_plan: unknown;
 };
 
+export type UpsertApprovalProjectionInput = {
+  id: string;
+  session_id: string | null;
+  tool: string;
+  args: Record<string, unknown>;
+  system_run_plan: unknown;
+  created_at?: string | null;
+};
+
 export type MarkDecidedInput = {
   id: string;
   decision: ApprovalDecision;
@@ -29,6 +38,15 @@ export type HardeningResultInput = {
   safetyScore: number;
   blockedLayers: string[];
   allowed: boolean;
+};
+
+export type SyncApprovalProjectionStatusInput = {
+  id: string;
+  status: ApprovalStatus;
+  decision_scope?: ApprovalDecision | null;
+  decided_by?: ApprovalDecidedBy | null;
+  reason?: string | null;
+  decided_at?: string | null;
 };
 
 type ApprovalRow = {
@@ -92,6 +110,45 @@ export async function createApproval(
   if (!row) throw new Error("createApproval returned no data");
 
   await scheduleExpire(row.id);
+  return mapApproval(row);
+}
+
+export async function upsertApprovalProjection(
+  input: UpsertApprovalProjectionInput,
+  _client?: unknown,
+): Promise<Approval> {
+  const row = await queryOne<ApprovalRow>(
+    `
+      insert into approvals (
+        id,
+        session_id,
+        tool,
+        args,
+        system_run_plan,
+        status,
+        created_at
+      )
+      values ($1, $2, $3, $4::jsonb, $5::jsonb, 'pending', coalesce($6::timestamptz, now()))
+      on conflict (id)
+      do update
+      set
+        session_id = coalesce(excluded.session_id, approvals.session_id),
+        tool = excluded.tool,
+        args = excluded.args,
+        system_run_plan = excluded.system_run_plan
+      returning *
+    `,
+    [
+      input.id,
+      input.session_id,
+      input.tool,
+      JSON.stringify(input.args),
+      JSON.stringify(input.system_run_plan ?? null),
+      input.created_at ?? null,
+    ],
+  );
+
+  if (!row) throw new Error("upsertApprovalProjection returned no data");
   return mapApproval(row);
 }
 
@@ -205,6 +262,35 @@ export async function markDecided(
   }
 
   return mapApproval(row);
+}
+
+export async function syncApprovalProjectionStatus(
+  input: SyncApprovalProjectionStatusInput,
+  _client?: unknown,
+): Promise<Approval | null> {
+  const row = await queryOne<ApprovalRow>(
+    `
+      update approvals
+      set
+        status = $2,
+        decision_scope = $3,
+        decided_by = $4,
+        reason = $5,
+        decided_at = $6::timestamptz
+      where id = $1
+      returning *
+    `,
+    [
+      input.id,
+      input.status,
+      input.decision_scope ?? null,
+      input.decided_by ?? null,
+      input.reason ?? null,
+      input.decided_at ?? null,
+    ],
+  );
+
+  return row ? mapApproval(row) : null;
 }
 
 export async function expireIfPending(
