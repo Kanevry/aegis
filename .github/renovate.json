@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":preserveSemverRanges", ":dependencyDashboard"],
+  "schedule": ["every weekend"],
+  "labels": ["deps", "renovate"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "groupName": "all minor updates"
+    },
+    {
+      "matchPackagePatterns": ["^@sentry/"],
+      "groupName": "Sentry"
+    },
+    {
+      "matchPackagePatterns": ["^@ai-sdk/", "^ai$"],
+      "groupName": "Vercel AI SDK"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "assignees": ["Kanevry"]
+  }
+}
