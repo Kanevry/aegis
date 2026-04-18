@@ -3,17 +3,10 @@
 export const runtime = "nodejs";
 
 import { cookies } from "next/headers";
-import { DEMO_USER_ID, SESSION_COOKIE_NAME, isDemoAuthDisabled, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE_NAME, verifySession } from "@/lib/auth";
 import { apiOk, apiError } from "@/lib/api";
 
 export async function GET() {
-  if (isDemoAuthDisabled()) {
-    return apiOk({
-      userId: DEMO_USER_ID,
-      expiresAt: null,
-    });
-  }
-
   const cookieStore = await cookies();
   const cookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 

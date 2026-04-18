@@ -147,12 +147,6 @@ export async function middleware(
   const forwarded = new Headers(req.headers);
   forwarded.set("x-request-id", requestId);
 
-  if (process.env["AEGIS_DEMO_DISABLE_AUTH"] === "true") {
-    const res = NextResponse.next({ request: { headers: forwarded } });
-    res.headers.set("x-request-id", requestId);
-    return res;
-  }
-
   const cookieValue = req.cookies.get("aegis_session")?.value ?? null;
   const claim = await verifySessionEdge(cookieValue);
 
