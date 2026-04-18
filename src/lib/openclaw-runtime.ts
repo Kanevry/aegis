@@ -294,12 +294,8 @@ function resolveOpenclawGatewayConfig() {
     process.env["OPENCLAW_GATEWAY_TOKEN"] ||
     process.env["OPENCLAW_API_TOKEN"] ||
     "";
-  const origin =
-    process.env["AEGIS_WEB_BASE_URL"] ||
-    process.env["NEXT_PUBLIC_APP_URL"] ||
-    "http://localhost:3000";
 
-  return { baseURL, apiToken, origin };
+  return { baseURL, apiToken };
 }
 
 function toGatewayWsUrl(baseURL: string) {
@@ -317,12 +313,12 @@ function toGatewayWsUrl(baseURL: string) {
 
 function resolveConnectClientInfo() {
   return {
-    id: "openclaw-control-ui",
+    id: "gateway-client",
     displayName: "Ægis Runtime Bridge",
     version: process.env["npm_package_version"] ?? "0.1.0",
-    platform: "web",
-    mode: "webchat",
-    deviceFamily: "browser",
+    platform: process.platform,
+    mode: "backend",
+    deviceFamily: "server",
     instanceId: "aegis-runtime-bridge",
   };
 }
@@ -434,7 +430,7 @@ function scheduleBridgeReconnect() {
   }
   state.reconnectTimer = setTimeout(() => {
     state.reconnectTimer = null;
-    void ensureOpenclawRuntimeBridgeStarted().catch(() => undefined);
+    void ensureOpenclawRuntimeBridgeStarted();
   }, WS_RECONNECT_DELAY_MS);
   state.reconnectTimer.unref?.();
 }
@@ -580,7 +576,7 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
     return await state.connectPromise;
   }
 
-  const { apiToken, baseURL, origin } = resolveOpenclawGatewayConfig();
+  const { apiToken, baseURL } = resolveOpenclawGatewayConfig();
   if (!apiToken) {
     throw new Error("OpenClaw gateway token is not configured for bridge startup");
   }
@@ -593,11 +589,7 @@ export async function ensureOpenclawRuntimeBridgeStarted(): Promise<void> {
   void state.connectPromise.catch(() => undefined);
 
   const wsUrl = toGatewayWsUrl(baseURL);
-  const socket = new WebSocket(wsUrl, {
-    headers: {
-      origin,
-    },
-  });
+  const socket = new WebSocket(wsUrl);
   state.socket = socket;
 
   const timeout = setTimeout(() => {
@@ -669,7 +661,7 @@ async function callGatewayRpc<T = unknown>(method: string, params: unknown): Pro
   }
 
   const id = randomUUID();
-  const result = new Promise<unknown>((resolve, reject) => {
+  const result = new Promise<T>((resolve, reject) => {
     const timeout = setTimeout(() => {
       state.pendingRpc.delete(id);
       reject(new Error(`OpenClaw RPC timed out: ${method}`));
@@ -687,7 +679,7 @@ async function callGatewayRpc<T = unknown>(method: string, params: unknown): Pro
     }),
   );
 
-  return (await result) as T;
+  return await result;
 }
 
 function toStoredStatus(decision: RuntimeApprovalDecision): RuntimeApprovalRecord["status"] {

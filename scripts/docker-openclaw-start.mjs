@@ -4,14 +4,10 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { ROOT_DIR, resolveDockerEnvFile } from "./docker-openclaw-env.mjs";
 
-function log(message) {
-  process.stdout.write(`${message}\n`);
-}
-
 const envFile = resolveDockerEnvFile();
 const relativeEnvFile = path.relative(ROOT_DIR, envFile) || envFile;
 
-log(`Using ${relativeEnvFile} for OpenClaw Docker start`);
+console.log(`Using ${relativeEnvFile} for OpenClaw Docker start`);
 
 const result = spawnSync(
   "docker",

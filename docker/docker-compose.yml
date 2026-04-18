@@ -61,8 +61,11 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://aegis:aegis@postgres:5432/aegis}
       PGBOSS_SCHEMA: ${PGBOSS_SCHEMA:-pgboss}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
