@@ -1,0 +1,13 @@
+node_modules/
+.next/
+coverage/
+dist/
+build/
+out/
+docs/
+docker/
+.husky/
+packages/**/tests/
+src/**/*.test.ts
+src/**/*.test.tsx
+src/**/__tests__/
