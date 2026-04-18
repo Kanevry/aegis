@@ -95,7 +95,7 @@ Set these in **Vercel Dashboard → Project → Settings → Environment Variabl
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `NEXT_PUBLIC_SENTRY_ENABLED` | `true` | Master Sentry toggle |
-| `NEXT_PUBLIC_AEGIS_SENTRY_FEEDBACK_WIDGET` | `true` | Dashboard feedback form |
+| `AEGIS_SENTRY_FEEDBACK_WIDGET` | `true` | Dashboard feedback form |
 | `AEGIS_HARDENING_ENABLED` | `true` | Master hardening switch |
 | `AEGIS_LAYER_B1_PATHS` | `true` | Layer B1 path traversal |
 | `AEGIS_LAYER_B2_PII` | `true` | Layer B2 PII detection |
