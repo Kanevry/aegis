@@ -1,0 +1,33 @@
+{
+  gateway: {
+    mode: "local",
+    bind: "lan",
+    port: 18789,
+    auth: {
+      mode: "token",
+      token: "${OPENCLAW_GATEWAY_TOKEN}",
+    },
+    reload: { mode: "off" },
+  },
+
+  agent: {
+    model: "openai/gpt-5",
+  },
+
+  session: {
+    dmScope: "per-channel-peer",
+  },
+
+  tools: {
+    profile: "coding",
+    exec: {
+      security: "allowlist",
+      ask: "on-miss",
+      strictInlineEval: true,
+    },
+    elevated: {
+      enabled: false,
+    },
+  },
+}
+

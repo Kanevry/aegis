@@ -1,0 +1,12 @@
+.git
+.idea
+.next
+.changeset
+coverage
+dist
+node_modules
+**/node_modules
+docker/.tmp
+docker/openclaw/state
+*.log
+

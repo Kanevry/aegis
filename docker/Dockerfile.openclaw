@@ -1,0 +1,46 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /srv/openclaw
+
+ENV HOME=/home/openclaw
+ENV OPENCLAW_HOME=/var/lib/openclaw/state
+ENV OPENCLAW_STATE_DIR=/var/lib/openclaw/state
+ENV OPENCLAW_CONFIG_PATH=/etc/openclaw/openclaw.json5
+ENV OPENCLAW_GATEWAY_PORT=18789
+ENV OPENCLAW_GATEWAY_TOKEN=replace-me
+ENV OPENCLAW_SKIP_CHANNELS=1
+ENV AEGIS_BASE_URL=http://aegis-web:3000
+ENV AEGIS_HEALTH_PATH=/api/runtime/openclaw/health
+ENV AEGIS_SHARED_TOKEN=replace-me
+ENV OPENCLAW_AEGIS_BRIDGE_ENABLED=1
+ENV OPENCLAW_AEGIS_APPROVAL_REQUEST_PATH=/api/runtime/openclaw/approval-requests
+ENV OPENCLAW_AEGIS_DECISION_REQUEST_PATH=/api/runtime/openclaw/approval-requests/{approvalId}/decisions
+ENV OPENCLAW_AEGIS_VERIFY_TLS=0
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends bash ca-certificates curl git tini \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --system --gid 10001 openclaw \
+  && useradd --system --uid 10001 --gid 10001 --home-dir /home/openclaw --create-home --shell /usr/sbin/nologin openclaw \
+  && mkdir -p /etc/openclaw /var/lib/openclaw/state /home/openclaw/.openclaw
+
+RUN npm install -g openclaw@latest
+
+COPY openclaw/openclaw.json5 /etc/openclaw/openclaw.json5
+COPY openclaw/exec-approvals.json /home/openclaw/.openclaw/exec-approvals.json
+COPY openclaw/entrypoint.sh /usr/local/bin/aegis-openclaw-entrypoint
+
+RUN chmod +x /usr/local/bin/aegis-openclaw-entrypoint \
+  && chown root:root /etc/openclaw /etc/openclaw/openclaw.json5 /home/openclaw/.openclaw /home/openclaw/.openclaw/exec-approvals.json \
+  && chmod 0555 /etc/openclaw /home/openclaw/.openclaw \
+  && chmod 0444 /etc/openclaw/openclaw.json5 /home/openclaw/.openclaw/exec-approvals.json \
+  && chown -R openclaw:openclaw /var/lib/openclaw /home/openclaw \
+  && chown root:root /home/openclaw/.openclaw /home/openclaw/.openclaw/exec-approvals.json \
+  && chmod 0755 /home/openclaw /var/lib/openclaw /var/lib/openclaw/state
+
+EXPOSE 18789
+
+USER openclaw:openclaw
+
+ENTRYPOINT ["tini", "--", "aegis-openclaw-entrypoint"]

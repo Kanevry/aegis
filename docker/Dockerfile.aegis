@@ -1,0 +1,23 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /app
+
+ARG AEGIS_BUILD_PROFILE=dev
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV AEGIS_BUILD_PROFILE=${AEGIS_BUILD_PROFILE}
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY next.config.ts tsconfig.json next-env.d.ts postcss.config.mjs eslint.config.mjs ./
+COPY src ./src
+COPY packages ./packages
+
+RUN pnpm install --frozen-lockfile
+RUN if [ "${AEGIS_BUILD_PROFILE}" = "production" ]; then pnpm exec next build --webpack; else echo "Skipping production build for Aegis dev profile"; fi
+
+EXPOSE 3000
+
+CMD ["sh", "-lc", "if [ -d .next/server ]; then NODE_ENV=production pnpm exec next start -H 0.0.0.0 -p 3000; else NODE_ENV=development pnpm exec next dev -H 0.0.0.0 -p 3000; fi"]

@@ -1,0 +1,55 @@
+name: aegis-openclaw
+
+services:
+  aegis-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.aegis
+      args:
+        AEGIS_BUILD_PROFILE: ${AEGIS_BUILD_PROFILE:-dev}
+    image: aegis-web:local
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      AEGIS_SHARED_TOKEN: ${AEGIS_SHARED_TOKEN}
+      AEGIS_WEB_BASE_URL: ${AEGIS_WEB_BASE_URL:-http://localhost:3000}
+      AEGIS_EXPECTED_OPENCLAW_GATEWAY_URL: http://openclaw-gateway:${OPENCLAW_GATEWAY_PORT:-18789}
+      AEGIS_EXPECTED_OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN:-}
+    ports:
+      - "3000:3000"
+
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.openclaw
+    image: aegis-openclaw-gateway:local
+    depends_on:
+      - aegis-web
+    environment:
+      OPENCLAW_GATEWAY_PORT: ${OPENCLAW_GATEWAY_PORT:-18789}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      AEGIS_BASE_URL: http://aegis-web:3000
+      AEGIS_HEALTH_PATH: /api/runtime/openclaw/health
+      AEGIS_SHARED_TOKEN: ${AEGIS_SHARED_TOKEN}
+      OPENCLAW_AEGIS_BRIDGE_ENABLED: "1"
+      OPENCLAW_AEGIS_APPROVAL_REQUEST_PATH: /api/runtime/openclaw/approval-requests
+      OPENCLAW_AEGIS_DECISION_REQUEST_PATH: /api/runtime/openclaw/approval-requests/{approvalId}/decisions
+      OPENCLAW_AEGIS_VERIFY_TLS: "0"
+    ports:
+      - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    volumes:
+      - openclaw-state:/var/lib/openclaw/state
+
+volumes:
+  openclaw-state:
