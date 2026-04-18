@@ -61,9 +61,9 @@ async function handleApprovalRequested(
     args: event.args,
     system_run_plan: event.system_run_plan ?? null,
   });
-  // Schedule TTL expire (15 min = 900 s), Sentry enrichment, and Discord notification
+  // createApproval already schedules approval.expire (15 min TTL); enqueue the
+  // remaining side-effects here.
   await Promise.all([
-    enqueue(QUEUES.APPROVAL_EXPIRE, { id: event.approval_id }, { startAfter: 900 }),
     enqueue(QUEUES.SENTRY_ENRICH, { approval_id: event.approval_id }),
     enqueue(QUEUES.NOTIFICATION_DISPATCH, {
       channel: 'discord' as const,
@@ -113,7 +113,7 @@ async function handleExecFinished(
   event: Extract<OpenclawEventPayload, { type: 'exec.finished' }>,
 ): Promise<void> {
   const supabase = createServiceRoleClient();
-  await supabase.from('aegis_decisions').insert({
+  const { error } = await supabase.from('aegis_decisions').insert({
     approval_id: event.run_id,
     layer: 'B5', // CHECK constraint allows B1..B5; sandbox outcome stored in details.sub_layer
     outcome: event.exit_code === 0 ? 'ok' : 'blocked',
@@ -125,6 +125,7 @@ async function handleExecFinished(
       output: event.output ?? null,
     },
   });
+  if (error) throw error;
 }
 
 async function handleExecDenied(
@@ -137,7 +138,7 @@ async function handleExecDenied(
     data: { run_id: event.run_id, reason: event.reason },
   });
   const supabase = createServiceRoleClient();
-  await supabase.from('aegis_decisions').insert({
+  const { error } = await supabase.from('aegis_decisions').insert({
     approval_id: event.run_id,
     layer: 'B5', // CHECK constraint allows B1..B5; sandbox outcome stored in details.sub_layer
     outcome: 'blocked',
@@ -147,4 +148,5 @@ async function handleExecDenied(
       reason: event.reason,
     },
   });
+  if (error) throw error;
 }

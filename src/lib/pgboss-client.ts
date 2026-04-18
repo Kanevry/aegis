@@ -35,7 +35,13 @@ export function getBoss(): Promise<BossInstance> {
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL required for pg-boss enqueue');
     const PgBoss = (require('pg-boss') as { default: BossConstructor }).default ?? (require('pg-boss') as BossConstructor);
     const boss = new PgBoss({ connectionString: env.DATABASE_URL, schema: env.PGBOSS_SCHEMA });
-    boss.on('error', () => { /* logged centrally via Sentry instrumentation */ });
+    boss.on('error', () => {
+      // Forward pg-boss process errors to Sentry. Imported lazily to avoid a
+      // hard dependency in environments where @sentry/nextjs is absent.
+      void import('@sentry/nextjs')
+        .then(({ captureException }) => captureException(new Error('pg-boss process error')))
+        .catch(() => {});
+    });
     await boss.start();
     return boss;
   })();
