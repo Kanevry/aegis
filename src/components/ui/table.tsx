@@ -10,21 +10,13 @@ export function Table({ className, ...props }: React.HTMLAttributes<HTMLTableEle
 }
 
 export function TableHeader({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return (
-    <thead
-      className={cn('[&_tr]:border-b [&_tr]:border-neutral-200 dark:[&_tr]:border-neutral-800', className)}
-      {...props}
-    />
-  );
+  return <thead className={cn('[&_tr]:border-b [&_tr]:border-neutral-800', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <tbody
-      className={cn(
-        '[&_tr:last-child]:border-0 [&_tr:nth-child(even)]:bg-neutral-50/80 dark:[&_tr:nth-child(even)]:bg-neutral-900/40',
-        className,
-      )}
+      className={cn('[&_tr:last-child]:border-0 [&_tr:nth-child(even)]:bg-neutral-900/40', className)}
       {...props}
     />
   );
@@ -34,7 +26,7 @@ export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTable
   return (
     <tr
       className={cn(
-        'border-b border-neutral-200 transition-colors hover:bg-neutral-100/80 dark:border-neutral-800 dark:hover:bg-neutral-800/50',
+        'border-b border-neutral-800 transition-colors hover:bg-neutral-800/50',
         className,
       )}
       {...props}
@@ -46,7 +38,7 @@ export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTa
   return (
     <th
       className={cn(
-        'h-10 px-4 text-left align-middle text-xs font-medium text-neutral-500 dark:text-neutral-500 [&:has([role=checkbox])]:pr-0',
+        'h-10 px-4 text-left align-middle text-xs font-medium text-neutral-500 [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}
@@ -57,10 +49,7 @@ export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTa
 export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn(
-        'px-4 py-3 align-middle text-neutral-700 dark:text-neutral-200 [&:has([role=checkbox])]:pr-0',
-        className,
-      )}
+      className={cn('px-4 py-3 align-middle text-neutral-200 [&:has([role=checkbox])]:pr-0', className)}
       {...props}
     />
   );

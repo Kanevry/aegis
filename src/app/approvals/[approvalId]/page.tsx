@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Route } from "next";
 import { resolveApprovalAction } from "../actions";
 import {
   ensureOpenclawRuntimeBridgeStarted,

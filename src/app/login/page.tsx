@@ -6,7 +6,7 @@ import { toast, Toaster } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-function LoginPageContent() {
+export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -93,13 +93,5 @@ function LoginPageContent() {
         </div>
       </main>
     </>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <React.Suspense fallback={null}>
-      <LoginPageContent />
-    </React.Suspense>
   );
 }
