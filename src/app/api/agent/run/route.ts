@@ -35,7 +35,7 @@ const BodySchema = z.object({
   prompt: z.string().min(1).max(10_000),
   provider: z.enum(['openai', 'anthropic']).default('openai'),
   patternId: PatternIdSchema,
-}).strict();
+});
 
 export async function POST(req: NextRequest) {
   // Parse + validate

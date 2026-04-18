@@ -34,7 +34,7 @@ export const AegisEnvSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
   PORT: z.coerce.number().default(3000),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: z.url().optional(),
 
   // ── OpenAI (required) ─────────────────────────────────────────────────────
   OPENAI_API_KEY: z
@@ -54,8 +54,8 @@ export const AegisEnvSchema = z.object({
     .optional(),
 
   // ── Sentry ────────────────────────────────────────────────────────────────
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url("NEXT_PUBLIC_SENTRY_DSN must be a valid URL"),
-  SENTRY_DSN: z.string().url().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.url("NEXT_PUBLIC_SENTRY_DSN must be a valid URL"),
+  SENTRY_DSN: z.url().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
   SENTRY_ORG: z.string().optional(),
   SENTRY_PROJECT: z.string().optional(),
