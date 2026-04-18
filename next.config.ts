@@ -4,9 +4,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
+  transpilePackages: ['@aegis/hardening', '@aegis/types'],
 };
 
 export default withSentryConfig(nextConfig, {

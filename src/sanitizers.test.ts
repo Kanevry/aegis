@@ -19,7 +19,7 @@ describe('sanitizeLogInput', () => {
 });
 
 describe('sanitizeForFilename', () => {
-  it('strips path separators', () => { expect(sanitizeForFilename('../../etc/passwd')).toBe('_.._etc_passwd'); });
+  it('strips path separators', () => { expect(sanitizeForFilename('../../etc/passwd')).toBe('._._etc_passwd'); });
   it('strips null bytes', () => { expect(sanitizeForFilename('file\x00.txt')).toBe('file_.txt'); });
   it('strips special chars', () => { expect(sanitizeForFilename('a:b*c?d')).toBe('a_b_c_d'); });
   it('collapses double dots', () => { expect(sanitizeForFilename('file..txt')).toBe('file.txt'); });

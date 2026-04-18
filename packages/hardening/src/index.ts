@@ -9,25 +9,25 @@
 //   const hardening = createHardening({ flags: { B1: true, B5: true } })
 //   const result = hardening.run({ prompt, paths, refs, taskText })
 
-export { validateSinglePath, validatePaths } from "./paths.js";
-export type { PathValidation } from "./paths.js";
+export { validateSinglePath, validatePaths } from "./paths";
+export type { PathValidation } from "./paths";
 
-export { detectPersonalInfoQuery, recommendedPiiOutcome } from "./pii.js";
-export type { PiiDetectionResult, PiiCategory } from "./pii.js";
+export { detectPersonalInfoQuery, recommendedPiiOutcome } from "./pii";
+export type { PiiDetectionResult, PiiCategory } from "./pii";
 
 export {
   validateGroundingRefs,
   initialVisitedSet,
   trackVisited,
   extractPathsFromText,
-} from "./refs.js";
-export type { RefsValidationResult } from "./refs.js";
+} from "./refs";
+export type { RefsValidationResult } from "./refs";
 
-export { scanForInjection, validateEmailDomain, isUnsupportedFeature } from "./security.js";
-export type { InjectionResult, DomainValidation } from "./security.js";
+export { scanForInjection, validateEmailDomain, isUnsupportedFeature } from "./security";
+export type { InjectionResult, DomainValidation } from "./security";
 
-export { redactSecrets } from "./redaction.js";
-export type { RedactionResult } from "./redaction.js";
+export { redactSecrets } from "./redaction";
+export type { RedactionResult } from "./redaction";
 
 // ── Facade types ────────────────────────────────────────────────────
 
@@ -66,8 +66,11 @@ type LayerFlag = "B1" | "B2" | "B3" | "B4" | "B5";
 interface HardeningOptions {
   /**
    * Per-layer feature flags. If not provided, falls back to env vars:
-   * ENABLE_PATH_GUARD, ENABLE_PII_REFUSAL, ENABLE_REFS_VALIDATION,
-   * ENABLE_SECURITY_BRAKE, ENABLE_SECRET_REDACTION
+   * AEGIS_LAYER_B1_PATHS, AEGIS_LAYER_B2_PII, AEGIS_LAYER_B3_REFS,
+   * AEGIS_LAYER_B4_SECURITY, AEGIS_LAYER_B5_REDACTION
+   *
+   * Master switch: AEGIS_HARDENING_ENABLED (default: true). When false,
+   * createHardening returns allowed=true, safetyScore=1, blockedLayers=[].
    *
    * Default when neither opts nor env var is set: all layers enabled.
    */
@@ -94,11 +97,11 @@ function resolveFlag(
     return opts.flags[layer] ?? true;
   }
   const envMap: Record<LayerFlag, string> = {
-    B1: "ENABLE_PATH_GUARD",
-    B2: "ENABLE_PII_REFUSAL",
-    B3: "ENABLE_REFS_VALIDATION",
-    B4: "ENABLE_SECURITY_BRAKE",
-    B5: "ENABLE_SECRET_REDACTION",
+    B1: "AEGIS_LAYER_B1_PATHS",
+    B2: "AEGIS_LAYER_B2_PII",
+    B3: "AEGIS_LAYER_B3_REFS",
+    B4: "AEGIS_LAYER_B4_SECURITY",
+    B5: "AEGIS_LAYER_B5_REDACTION",
   };
   return envFlag(envMap[layer]);
 }
@@ -121,14 +124,14 @@ function countDestructivePatterns(text: string): number {
 
 // ── Factory ─────────────────────────────────────────────────────────
 
-import { validatePaths } from "./paths.js";
-import { detectPersonalInfoQuery } from "./pii.js";
+import { validatePaths } from "./paths";
+import { detectPersonalInfoQuery } from "./pii";
 import {
   validateGroundingRefs,
   initialVisitedSet,
-} from "./refs.js";
-import { scanForInjection } from "./security.js";
-import { redactSecrets } from "./redaction.js";
+} from "./refs";
+import { scanForInjection } from "./security";
+import { redactSecrets } from "./redaction";
 
 /**
  * Creates a composable hardening pipeline with 5 layers (B1–B5).
@@ -146,6 +149,20 @@ export function createHardening(opts?: HardeningOptions): {
 } {
   return {
     run(input: HardeningInput): HardeningResult {
+      // ── Master switch: AEGIS_HARDENING_ENABLED ───────────────────
+      // When false, skip all layers and allow the prompt through unchanged.
+      if (!envFlag("AEGIS_HARDENING_ENABLED")) {
+        return {
+          safetyScore: 1,
+          blockedLayers: [],
+          piiDetected: false,
+          injectionDetected: false,
+          destructiveCount: 0,
+          allowed: true,
+          redactedPrompt: input.prompt,
+        };
+      }
+
       const blockedLayers: string[] = [];
       let safetyScore = 1.0;
       let piiDetected = false;

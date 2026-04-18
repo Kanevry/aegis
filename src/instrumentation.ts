@@ -3,18 +3,29 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
-
-const SENTRY_ENABLED =
-  !!process.env.NEXT_PUBLIC_SENTRY_DSN &&
-  process.env.NEXT_PUBLIC_SENTRY_ENABLED !== 'false';
+import { loadEnv } from '@aegis/types';
+import { redactSecrets } from '@aegis/hardening';
 
 export async function register() {
+  // Fail-fast env validation: throws an actionable Error on missing/malformed
+  // required keys. Set SKIP_ENV_VALIDATION=true to bypass in dev/CI.
+  let aegisEnv;
+  try {
+    aegisEnv = loadEnv(process.env);
+  } catch (err) {
+    console.error('[Ægis] Server start aborted — invalid environment:', err);
+    throw err;
+  }
+
+  const SENTRY_ENABLED =
+    aegisEnv.NEXT_PUBLIC_SENTRY_ENABLED && !!aegisEnv.NEXT_PUBLIC_SENTRY_DSN;
+
   if (!SENTRY_ENABLED) return;
 
   const commonConfig = {
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    dsn: aegisEnv.NEXT_PUBLIC_SENTRY_DSN,
     tracesSampleRate: 1.0,
-    environment: process.env.NODE_ENV,
+    environment: aegisEnv.NODE_ENV,
     debug: false,
   };
 
@@ -30,11 +41,26 @@ export async function register() {
         if (event.request?.headers) {
           delete event.request.headers['authorization'];
           delete event.request.headers['cookie'];
+          delete event.request.headers['x-api-key'];
         }
-        // TODO: replace inline redaction with redactSecrets() from @aegis/hardening
-        // once packages/hardening is ported (B5 redaction module).
-        // import { redactSecrets } from '@aegis/hardening';
-        // if (event.message) event.message = redactSecrets(event.message).text;
+
+        // B5 redaction: strip known secret shapes from event text fields.
+        if (event.message) {
+          event.message = redactSecrets(event.message).text;
+        }
+
+        if (event.exception?.values) {
+          for (const ex of event.exception.values) {
+            if (ex.value) {
+              ex.value = redactSecrets(ex.value).text;
+            }
+          }
+        }
+
+        if (event.request?.data && typeof event.request.data === 'string') {
+          event.request.data = redactSecrets(event.request.data).text;
+        }
+
         return event;
       },
     });
