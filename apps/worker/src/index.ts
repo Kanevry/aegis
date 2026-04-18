@@ -3,6 +3,10 @@
 import * as Sentry from '@sentry/node';
 import { createBoss, startBoss } from './boss';
 import { QUEUES } from './queues';
+import { handleApprovalExpire } from './handlers/approval-expire';
+import { handleSentryEnrich } from './handlers/sentry-enrich';
+import { handleNotificationDispatch } from './handlers/notification-dispatch';
+import { handleSessionCleanup } from './handlers/session-cleanup';
 
 async function main() {
   if (process.env['SENTRY_DSN']) {
@@ -22,6 +26,12 @@ async function main() {
   await boss.createQueue(QUEUES.SENTRY_ENRICH);
   await boss.createQueue(QUEUES.NOTIFICATION_DISPATCH);
   await boss.createQueue(QUEUES.SESSION_CLEANUP);
+
+  // Register job handlers
+  await boss.work(QUEUES.APPROVAL_EXPIRE, handleApprovalExpire);
+  await boss.work(QUEUES.SENTRY_ENRICH, handleSentryEnrich);
+  await boss.work(QUEUES.NOTIFICATION_DISPATCH, { batchSize: 5 }, handleNotificationDispatch);
+  await boss.work(QUEUES.SESSION_CLEANUP, handleSessionCleanup);
 
   // Nightly cleanup cron (03:00 UTC)
   await boss.schedule(QUEUES.SESSION_CLEANUP, '0 3 * * *');
