@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import {
   Activity,
+  Grid2X2Check,
   GitBranch,
   GitCompareArrows,
   LayoutDashboard,
@@ -17,7 +18,7 @@ const navItems: { href: Route; icon: React.ReactNode; label: string; exact?: boo
   { href: '/dashboard/testbed' as Route, icon: <Zap size={16} />, label: 'Testbed' },
   { href: '/dashboard/flow' as Route, icon: <GitBranch size={16} />, label: 'Flow' },
   { href: '/dashboard/compare' as Route, icon: <GitCompareArrows size={16} />, label: 'Compare' },
-  { href: '/dashboard/events' as Route, icon: <Activity size={16} />, label: 'Events' },
+  { href: '/dashboard/eval' as Route, icon: <Grid2X2Check size={16} />, label: 'Eval' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

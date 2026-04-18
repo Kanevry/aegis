@@ -60,6 +60,7 @@ export const AegisEnvSchema = z.object({
   SENTRY_ORG: z.string().optional(),
   SENTRY_PROJECT: z.string().optional(),
   NEXT_PUBLIC_SENTRY_ENABLED: coercedBool(true),
+  AEGIS_SENTRY_FEEDBACK_WIDGET: coercedBool(true),
 
   // ── Ægis hardening master switch ──────────────────────────────────────────
   AEGIS_HARDENING_ENABLED: coercedBool(true),
@@ -111,6 +112,8 @@ export function loadEnv(
       SENTRY_ORG: source["SENTRY_ORG"],
       SENTRY_PROJECT: source["SENTRY_PROJECT"],
       NEXT_PUBLIC_SENTRY_ENABLED: source["NEXT_PUBLIC_SENTRY_ENABLED"] !== "false",
+      AEGIS_SENTRY_FEEDBACK_WIDGET:
+        source["AEGIS_SENTRY_FEEDBACK_WIDGET"] !== "false",
       AEGIS_HARDENING_ENABLED: source["AEGIS_HARDENING_ENABLED"] !== "false",
       AEGIS_LAYER_B1_PATHS: source["AEGIS_LAYER_B1_PATHS"] !== "false",
       AEGIS_LAYER_B2_PII: source["AEGIS_LAYER_B2_PII"] !== "false",

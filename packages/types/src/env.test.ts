@@ -47,6 +47,7 @@ describe("loadEnv", () => {
     expect(env.AEGIS_LAYER_B5_REDACTION).toBe(true);
     expect(env.AEGIS_DEMO_MODE).toBe(false);
     expect(env.NEXT_PUBLIC_SENTRY_ENABLED).toBe(true);
+    expect(env.AEGIS_SENTRY_FEEDBACK_WIDGET).toBe(true);
     expect(env.SKIP_ENV_VALIDATION).toBe(false);
   });
 
