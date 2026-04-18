@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.production
+.env*.local
+.sentryclirc
+.sentryclirc.local
+*.pem
+
+# Test & Coverage
+coverage/
+playwright-report/
+test-results/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code / Codex CLI session state
+.claude/worktrees
+.claude/wave-scope.json
+.codex/worktrees
+.codex/wave-scope.json
+
+# Session-orchestrator ephemeral events (per-session, not persisted)
+.orchestrator/metrics/events.jsonl
+
+# Logs
+*.log
+npm-debug.log*

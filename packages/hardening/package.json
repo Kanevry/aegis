@@ -1,0 +1,23 @@
+{
+  "name": "@aegis/hardening",
+  "version": "0.0.0",
+  "private": true,
+  "description": "5-layer defense middleware for LLM agents — paths, PII, grounding refs, injection, secret redaction.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.1.2"
+  }
+}
