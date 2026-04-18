@@ -11,7 +11,7 @@
 [![Sentry](https://img.shields.io/badge/Sentry-v8-362D59?logo=sentry&logoColor=white)](./src/instrumentation.ts)
 [![Built at Codex Vienna](https://img.shields.io/badge/built%20at-Codex%20Vienna%202026--04--18-0ea5e9)](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18)
 
-**Live demo:** [aegis-codex.vercel.app](https://aegis-codex.vercel.app) · **Video:** [`demo.mp4`](./demo.mp4) · **Submission:** [`docs/submission-description.md`](docs/submission-description.md)
+**Live demo:** _self-host only — see Docker guide below_ · **Video:** [`demo.mp4`](./demo.mp4) · **Submission:** [`docs/submission-description.md`](docs/submission-description.md)
 
 </div>
 
