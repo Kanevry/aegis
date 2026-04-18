@@ -24,6 +24,10 @@ vi.mock("@/lib/sessions", () => ({
   listSessions: mockListSessions,
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: vi.fn().mockResolvedValue({ ok: true, retryAfterSec: 0 }),
+}));
+
 // ── Cookie mock ───────────────────────────────────────────────────────────────
 
 const mockGet = vi.fn();
@@ -47,6 +51,7 @@ import { issueSession } from "../../../lib/auth";
 
 const SECRET = "test-secret-at-least-thirty-two-characters-long";
 const VALID_TOKEN = issueSession("operator", SECRET);
+const routeModulePromise = import("./route.js");
 
 let savedSecret: string | undefined;
 
@@ -91,7 +96,7 @@ describe("GET /api/sessions", () => {
     ];
     mockListSessions.mockResolvedValue(fakeSessions);
 
-    const { GET } = await import("./route.js");
+    const { GET } = await routeModulePromise;
     const res = await GET(makeGetReq());
 
     expect(res.status).toBe(200);
@@ -103,7 +108,7 @@ describe("GET /api/sessions", () => {
   it("[401] missing cookie → 401 unauthorized", async () => {
     mockGet.mockReturnValue(undefined);
 
-    const { GET } = await import("./route.js");
+    const { GET } = await routeModulePromise;
     const res = await GET(makeGetReq());
 
     expect(res.status).toBe(401);
@@ -116,7 +121,7 @@ describe("GET /api/sessions", () => {
     mockGet.mockReturnValue({ value: VALID_TOKEN });
     mockListSessions.mockResolvedValue([]);
 
-    const { GET } = await import("./route.js");
+    const { GET } = await routeModulePromise;
     await GET(makeGetReq("http://localhost/api/sessions?limit=5"));
 
     expect(mockListSessions).toHaveBeenCalledWith(
@@ -128,7 +133,7 @@ describe("GET /api/sessions", () => {
     mockGet.mockReturnValue({ value: VALID_TOKEN });
     mockListSessions.mockRejectedValue(new Error("db down"));
 
-    const { GET } = await import("./route.js");
+    const { GET } = await routeModulePromise;
     const res = await GET(makeGetReq());
 
     expect(res.status).toBe(500);
@@ -150,7 +155,7 @@ describe("POST /api/sessions", () => {
     };
     mockCreateSession.mockResolvedValue(fakeSession);
 
-    const { POST } = await import("./route.js");
+    const { POST } = await routeModulePromise;
     const res = await POST(makePostReq({}));
 
     expect(res.status).toBe(201);
@@ -163,7 +168,7 @@ describe("POST /api/sessions", () => {
   it("[401] missing cookie → 401 unauthorized", async () => {
     mockGet.mockReturnValue(undefined);
 
-    const { POST } = await import("./route.js");
+    const { POST } = await routeModulePromise;
     const res = await POST(makePostReq({}));
 
     expect(res.status).toBe(401);
@@ -175,7 +180,7 @@ describe("POST /api/sessions", () => {
   it("[400] invalid body (non-JSON) → 400 invalid_body", async () => {
     mockGet.mockReturnValue({ value: VALID_TOKEN });
 
-    const { POST } = await import("./route.js");
+    const { POST } = await routeModulePromise;
     const badReq = new Request("http://localhost/api/sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -193,7 +198,7 @@ describe("POST /api/sessions", () => {
     mockGet.mockReturnValue({ value: VALID_TOKEN });
     mockCreateSession.mockRejectedValue(new Error("db down"));
 
-    const { POST } = await import("./route.js");
+    const { POST } = await routeModulePromise;
     const res = await POST(makePostReq({}));
 
     expect(res.status).toBe(500);

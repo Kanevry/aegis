@@ -42,6 +42,7 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
 
   const selectedAttack =
     ATTACK_LIBRARY.find((attack) => attack.id === selectedAttackId) ?? ATTACK_LIBRARY[0];
+  const visibleData = data?.attackId === selectedAttackId ? data : null;
 
   const loadComparison = React.useCallback(async (attackId: string) => {
     setLoading(true);
@@ -70,7 +71,7 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
   }, []);
 
   const activeBlockedLayer =
-    data?.variants.find((variant) => variant.hardening && variant.blockedLayers.length > 0)
+    visibleData?.variants.find((variant) => variant.hardening && variant.blockedLayers.length > 0)
       ?.blockedLayers[0] ??
     selectedAttack?.expectedBlockedLayers[0] ??
     null;
@@ -159,6 +160,19 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
         </CardContent>
       </Card>
 
+      {loading ? (
+        <Card className="border-neutral-800 bg-neutral-900/80">
+          <CardContent className="flex items-center gap-2 pt-6 text-sm text-neutral-300">
+            <RefreshCw size={16} className="animate-spin text-indigo-300" />
+            <span>
+              {visibleData
+                ? `Refreshing ${selectedAttack?.title ?? 'selected attack'} results…`
+                : `Running ${selectedAttack?.title ?? 'selected attack'}…`}
+            </span>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {mode === 'flow' ? (
         <Card className="border-neutral-800 bg-neutral-900/80">
           <CardHeader>
@@ -193,7 +207,8 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
 
             <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-4">
               <p className="text-sm text-neutral-300">
-                <span className="text-neutral-500">Prompt:</span> {selectedAttack?.prompt}
+                <span className="text-neutral-500">Prompt:</span>{' '}
+                {visibleData?.prompt ?? selectedAttack?.prompt}
               </p>
             </div>
           </CardContent>
@@ -201,7 +216,7 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {(data?.variants ?? []).map((variant) => (
+        {(visibleData?.variants ?? []).map((variant) => (
           <Card key={variant.id} className="border-neutral-800 bg-neutral-900/80">
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -250,7 +265,7 @@ export function AttackCompareView({ mode, initialData }: AttackCompareViewProps)
         ))}
       </div>
 
-      {!data && !loading ? (
+      {!visibleData && !loading ? (
         <Card className="border-neutral-800 bg-neutral-900/80">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-neutral-500">
