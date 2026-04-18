@@ -10,8 +10,12 @@
     reload: { mode: "off" },
   },
 
-  agent: {
-    model: "${OPENCLAW_MODEL_REF}",
+  agents: {
+    defaults: {
+      model: {
+        primary: "${OPENCLAW_MODEL_REF}",
+      },
+    },
   },
 
   session: {
