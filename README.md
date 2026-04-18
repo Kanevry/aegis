@@ -51,26 +51,104 @@ Each layer is independently toggleable via `AEGIS_LAYER_B*` environment flags. T
 
 ---
 
-## Quickstart
+## Setup
+
+### 30-second version
 
 ```bash
 pnpm install
-
-# Fill in secrets
-cp .env.example .env.local
-# Required:
-#   OPENAI_API_KEY=sk-...
-#   NEXT_PUBLIC_SENTRY_DSN=https://...@o0.ingest.sentry.io/...
-#   SENTRY_AUTH_TOKEN=sntrys_...
-# Optional:
-#   ANTHROPIC_API_KEY=sk-ant-...   # only needed for Claude-based A/B comparison flows
-
-pnpm dev
-# App running at http://localhost:3000
+cp .env.example .env.local   # fill in required keys (see below)
+pnpm dev                     # http://localhost:3000
 ```
 
-Optional event fan-out to Discord — see `.env.example` for `DISCORD_WEBHOOK_URL`.
-Anthropic support is optional and is only used for Claude-based A/B testing and provider comparison views; the default agent flow runs on OpenAI.
+### Prerequisites
+
+- Node.js ≥ 20 (tested on 22)
+- pnpm ≥ 9 (`npm i -g pnpm`)
+- A Sentry account (free tier is enough)
+- OpenAI API key (primary provider)
+- Anthropic API key (optional — only the compare view and B-side eval need it)
+
+### Required environment variables
+
+Copy `.env.example` → `.env.local` and fill the keys below. Never commit `.env.local` — it is in `.gitignore`.
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | yes | Primary LLM provider (`gpt-4o-mini` default) |
+| `ANTHROPIC_API_KEY` | for compare | A/B variants (`claude-haiku-4-5-20251001`) |
+| `NEXT_PUBLIC_SENTRY_DSN` | yes | Client + server DSN — must match the org you are logged into (see **DSN org check**) |
+| `SENTRY_DSN` | yes | Same value as `NEXT_PUBLIC_SENTRY_DSN` |
+| `SENTRY_AUTH_TOKEN` | for source-maps | Only for build-time source-map upload; dev works without |
+| `SENTRY_ORG` | yes | Org slug (must match DSN org) |
+| `SENTRY_PROJECT` | yes | Project slug (must match DSN project) |
+| `NEXT_PUBLIC_SENTRY_ENABLED` | yes | `true` to enable Sentry in dev |
+| `AEGIS_LAYER_B1_PATHS` … `B5_REDACTION` | optional | `true`/`false` per layer; all default `true` |
+
+See `.env.example` for the full list (Gemini, OpenRouter, Supabase, pg-boss, OpenClaw gateway, Discord fan-out, Upstash).
+
+### Provision a Sentry project (first time)
+
+The DSN must point to a project **in the same org** your `SENTRY_AUTH_TOKEN` can access. Mismatched DSN and token is the #1 reason the Sentry UI stays empty — see [`docs/setup-troubleshooting.md`](docs/setup-troubleshooting.md).
+
+Create a user token at https://sentry.io/settings/account/api/auth-tokens/, then:
+
+```bash
+export SENTRY_TOKEN=sntryu_...
+
+# 1. Confirm which org your token belongs to
+curl -sS https://sentry.io/api/0/organizations/ \
+  -H "authorization: Bearer $SENTRY_TOKEN" \
+  | jq -r '.[] | "\(.slug)\t\(.name)"'
+
+# 2. Create the project (replace <org> and <team>)
+curl -sS -X POST "https://sentry.io/api/0/teams/<org>/<team>/projects/" \
+  -H "authorization: Bearer $SENTRY_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"name":"aegis","slug":"aegis","platform":"javascript-nextjs"}'
+
+# 3. Fetch the public DSN
+curl -sS "https://sentry.io/api/0/projects/<org>/aegis/keys/" \
+  -H "authorization: Bearer $SENTRY_TOKEN" \
+  | jq -r '.[0].dsn.public'
+```
+
+Copy that DSN into **both** `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_DSN`, set `SENTRY_ORG=<org>` and `SENTRY_PROJECT=aegis`.
+
+### DSN org check (verify wiring before running)
+
+```bash
+DSN="<paste your DSN here>"
+HOST=$(echo "$DSN" | sed -E 's#https://[^@]+@([^/]+)/.*#\1#')
+KEY=$(echo  "$DSN" | sed -E 's#https://([^@]+)@.*#\1#')
+PID=$(echo  "$DSN" | sed -E 's#.*/([0-9]+)$#\1#')
+EID=$(uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]')
+
+curl -sS "https://$HOST/api/$PID/store/" \
+  -H "X-Sentry-Auth: Sentry sentry_version=7, sentry_key=$KEY, sentry_client=aegis-curl/1.0" \
+  -H "content-type: application/json" \
+  -d "{\"event_id\":\"$EID\",\"platform\":\"javascript\",\"level\":\"info\",\"message\":\"aegis-dsn-probe\"}"
+# HTTP 200 + {"id":"..."} → Sentry accepted the event. Refresh the Issues page.
+```
+
+If the event is accepted but never appears in your UI, the DSN belongs to a different org than the one you are viewing.
+
+### Dev-server restart required after `.env*` changes
+
+Next.js reads `.env.local` **only at server boot**. Code hot-reloads; env does not. After editing `.env.local`:
+
+```bash
+# Ctrl-C, then
+pnpm dev
+```
+
+### Secret rotation
+
+Never paste a raw secret into an issue, PR, or public channel. If a key was exposed, rotate it first, then update `.env.local`. Post-rotation the old key is dead — no code change needed unless the id alias differs.
+
+### Optional: Discord fan-out + Phase-2 services
+
+Set `DISCORD_WEBHOOK_URL` in `.env.local` to mirror blocked attacks into a Discord channel. See `.env.example` for the full OpenClaw / Supabase / pg-boss configuration if you want Phase-2 features.
 
 ---
 
@@ -123,7 +201,7 @@ The hardening core (`@aegis/hardening`) is ported from a first-place hackathon e
 
 ## Stack
 
-Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/ui (Lyra) · OpenAI GPT-4o/GPT-5 via Vercel AI SDK · Anthropic Claude (A/B testing) · `@sentry/nextjs` v8 with `openAIIntegration()` · pnpm workspace monorepo · Vercel deploy
+Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/ui (Lyra) · OpenAI `gpt-4o-mini` via Vercel AI SDK · Anthropic `claude-haiku-4-5-20251001` (A/B testing) · `@sentry/nextjs` v8 with `vercelAIIntegration()` · pnpm workspace monorepo · Vercel deploy
 
 ---
 

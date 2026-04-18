@@ -93,6 +93,15 @@ docs/
   submission-description.md  # public submission text
 ```
 
+## Model ids
+
+| Provider | Model id | Used by |
+|---|---|---|
+| OpenAI | `gpt-4o-mini` | default `/api/agent/run`, A/B compare |
+| Anthropic | `claude-haiku-4-5-20251001` | `/api/agent/run?provider=anthropic`, A/B compare |
+
+Both are defined in `src/app/api/agent/run/route.ts` and `src/lib/compare-service.ts`. When a vendor rotates a model alias, update both files and the stack line in `README.md` together — otherwise the Pass/Fail matrix and the compare endpoint drift apart.
+
 ## References
 
 - [Sentry AI Agent Monitoring](https://docs.sentry.io/product/insights/ai/agents/)
