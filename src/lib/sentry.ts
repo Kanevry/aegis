@@ -6,6 +6,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import type { HardeningResult } from '@aegis/hardening';
+import { buildBaseAegisSpanAttributes } from './sentry-contract';
 
 /**
  * Thrown (and captured) whenever Ægis hardening rejects a request.
@@ -44,12 +45,7 @@ export function withHardeningSpan<T>(
       op: 'gen_ai.invoke_agent',
       name,
       attributes: {
-        'aegis.safety_score': result.safetyScore,
-        'aegis.blocked_layers': result.blockedLayers.join(','),
-        'aegis.outcome': result.allowed ? 'allowed' : 'blocked',
-        'aegis.pii_detected': result.piiDetected,
-        'aegis.injection_detected': result.injectionDetected,
-        'aegis.destructive_count': result.destructiveCount,
+        ...buildBaseAegisSpanAttributes(result),
         ...extraAttrs,
       },
     },
