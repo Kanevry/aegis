@@ -104,10 +104,9 @@ gateway starts.
 This lets you provision Codex OAuth outside the container and keep the
 read-only config/approval paths separate from mutable model-auth state.
 
-Generate the seed bundle from the local machine with:
+Generate the seed bundle from the repository root with:
 
 ```bash
-cd /Users/andreas/Documents/code/aegis
 pnpm openclaw:export-codex-auth
 ```
 
