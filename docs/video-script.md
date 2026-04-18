@@ -29,7 +29,10 @@ Current runtimes:
 - Treat OpenClaw as **partially shipped Phase 2**, not just roadmap:
   - closed and documented: runtime contract `#65`, approval epic `#31`, client `#39`, chat stream `#40`, webhook ingress `#44`, resolve flow `#47`, setup runbook `#86`
   - still open: umbrella epic `#32`, full chat UI `#41`, approval cards `#48`, approvals queue `#49`, Discord fan-out `#50`, fuller Docker/devops coverage `#36`
-- If you mention OpenClaw on screen, prefer the issue board and `docs/OPENCLAW_SETUP.md` over unfinished dashboard surfaces.
+- We should **show OpenClaw in action**, not only mention it:
+  - best shot: `Dashboard -> Chat`, create a new session, switch provider to `OpenClaw`, send a prompt, then cut to `Dashboard -> Approvals`
+  - safest fallback: show the `OpenClaw` provider streaming in Chat, then cut to an already mirrored pending approval in `Approvals`
+- If the live OpenClaw tool-call trigger is flaky, keep the issue board and `docs/OPENCLAW_SETUP.md` as backup context rather than the primary beat.
 - Use one clear attack for the main story:
   - `path-traversal-001` for the cleanest block story
   - `prompt-injection-001` for the compare view
@@ -196,21 +199,24 @@ Current runtimes:
 
 "Phase 1: ship the shield"
 
-### 0:35-0:48 — OpenClaw Status
+### 0:35-0:48 — OpenClaw In Action
 
 **Voiceover**
 
-"The repo has already moved beyond a Phase 1 sketch. OpenClaw is partly integrated today: the typed client, hardened chat stream, webhook ingress, approval resolution, and setup runbook are closed. What remains open is the operator layer: chat UI, approval cards, approvals queue, Discord fan-out, and a fuller local stack."
+"Phase 2 is already visible in the product. Here the chat runs through OpenClaw, and risky actions can be surfaced as explicit approvals instead of hidden agent behavior."
 
 **Show**
 
-- Show the issue board with these closed items visible: `#31`, `#39`, `#40`, `#44`, `#47`, `#65`, `#86`
-- Then show the still-open work: `#32`, `#36`, `#41`, `#48`, `#49`, `#50`
-- Optional quick flash of `docs/OPENCLAW_SETUP.md` to underline that the setup path is already documented
+- Go to `Dashboard -> Chat`
+- Click `+` to create a new session
+- Switch provider to `OpenClaw`
+- Send one safe prompt so the OpenClaw provider is visibly selected and responding
+- If your local stack reliably emits an approval, cut immediately to `Dashboard -> Approvals` and open the pending request
+- If not, cut to a pre-seeded pending approval and show the detail card with the decision buttons
 
 **Caption**
 
-"OpenClaw backend shipped; operator UI still in progress"
+"OpenClaw chat and approval flow"
 
 ### 0:48-1:05 — Testbed Demo
 
@@ -298,12 +304,13 @@ If time is tight, record these in order:
 
 1. Home page or README hero
 2. GitHub issues list with closed Phase 1 work
-3. GitHub issues view showing shipped OpenClaw backend work (`#31`, `#39`, `#40`, `#44`, `#47`, `#65`, `#86`) plus remaining Phase 2 UI work (`#32`, `#41`, `#48`, `#49`, `#50`)
-4. Dashboard `Testbed` firing `path-traversal-001`
-5. Dashboard `Flow`
-6. Dashboard `Compare` with `prompt-injection-001`
-7. Dashboard `Eval`
-8. Sentry issue or trace tab
+3. Dashboard `Chat` with provider switched to `OpenClaw`
+4. Dashboard `Approvals` showing a pending request and the decision surface
+5. Dashboard `Testbed` firing `path-traversal-001`
+6. Dashboard `Flow`
+7. Dashboard `Compare` with `prompt-injection-001`
+8. Dashboard `Eval`
+9. Sentry issue or trace tab
 
 ---
 
