@@ -75,6 +75,29 @@ export const AegisEnvSchema = z.object({
   // ── Circuit breaker ───────────────────────────────────────────────────────
   /** Flip to true at 16:00 if the demo breaks — returns scripted mock results. */
   AEGIS_DEMO_MODE: coercedBool(false),
+
+  // ── OpenClaw Gateway (Phase 2) ────────────────────────────────────────────
+  OPENCLAW_BASE_URL: z.url().default("http://localhost:8787"),
+  OPENCLAW_API_TOKEN: z.string().min(1, "OPENCLAW_API_TOKEN required in production").optional(),
+  OPENCLAW_WEBHOOK_SECRET: z.string().min(32, "OPENCLAW_WEBHOOK_SECRET must be ≥32 chars").optional(),
+  OPENCLAW_AGENT_ID: z.string().default("openclaw/default"),
+
+  // ── Supabase (Phase 2) ────────────────────────────────────────────────────
+  NEXT_PUBLIC_SUPABASE_URL: z.url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  DATABASE_URL: z.url().optional(),
+
+  // ── pg-boss (Phase 2) ─────────────────────────────────────────────────────
+  PGBOSS_SCHEMA: z.string().default("pgboss"),
+
+  // ── Aegis Session Auth (Phase 2) ──────────────────────────────────────────
+  AEGIS_SESSION_SECRET: z.string().min(32, "AEGIS_SESSION_SECRET must be ≥32 chars (hex)").optional(),
+  AEGIS_SESSION_PASSPHRASE_HASH: z.string().optional(),
+
+  // ── Discord Fan-out (Phase 2) ─────────────────────────────────────────────
+  DISCORD_WEBHOOK_URL: z.url().optional(),
+  DISCORD_DEEP_LINK_BASE: z.url().default("https://aegis-codex.vercel.app/dashboard/approvals"),
 });
 
 export type AegisEnv = z.infer<typeof AegisEnvSchema>;
@@ -121,6 +144,19 @@ export function loadEnv(
       AEGIS_LAYER_B4_SECURITY: source["AEGIS_LAYER_B4_SECURITY"] !== "false",
       AEGIS_LAYER_B5_REDACTION: source["AEGIS_LAYER_B5_REDACTION"] !== "false",
       AEGIS_DEMO_MODE: source["AEGIS_DEMO_MODE"] === "true",
+      OPENCLAW_BASE_URL: source["OPENCLAW_BASE_URL"] ?? "http://localhost:8787",
+      OPENCLAW_API_TOKEN: source["OPENCLAW_API_TOKEN"],
+      OPENCLAW_WEBHOOK_SECRET: source["OPENCLAW_WEBHOOK_SECRET"],
+      OPENCLAW_AGENT_ID: source["OPENCLAW_AGENT_ID"] ?? "openclaw/default",
+      NEXT_PUBLIC_SUPABASE_URL: source["NEXT_PUBLIC_SUPABASE_URL"],
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: source["NEXT_PUBLIC_SUPABASE_ANON_KEY"],
+      SUPABASE_SERVICE_ROLE_KEY: source["SUPABASE_SERVICE_ROLE_KEY"],
+      DATABASE_URL: source["DATABASE_URL"],
+      PGBOSS_SCHEMA: source["PGBOSS_SCHEMA"] ?? "pgboss",
+      AEGIS_SESSION_SECRET: source["AEGIS_SESSION_SECRET"],
+      AEGIS_SESSION_PASSPHRASE_HASH: source["AEGIS_SESSION_PASSPHRASE_HASH"],
+      DISCORD_WEBHOOK_URL: source["DISCORD_WEBHOOK_URL"],
+      DISCORD_DEEP_LINK_BASE: source["DISCORD_DEEP_LINK_BASE"] ?? "https://aegis-codex.vercel.app/dashboard/approvals",
     } as AegisEnv;
     return permissive;
   }

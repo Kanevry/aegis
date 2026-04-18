@@ -66,3 +66,41 @@ describe("loadEnv", () => {
     expect(isLayerEnabled(env, "B1")).toBe(false);
   });
 });
+
+describe("Phase 2 env keys", () => {
+  it("SKIP_ENV_VALIDATION=true returns defaults for Phase-2 keys with defaults", () => {
+    const env = loadEnv({ SKIP_ENV_VALIDATION: "true" });
+    expect(env.OPENCLAW_BASE_URL).toBe("http://localhost:8787");
+    expect(env.OPENCLAW_AGENT_ID).toBe("openclaw/default");
+    expect(env.PGBOSS_SCHEMA).toBe("pgboss");
+    expect(env.DISCORD_DEEP_LINK_BASE).toBe(
+      "https://aegis-codex.vercel.app/dashboard/approvals"
+    );
+  });
+
+  it("valid Phase-1 env with missing Phase-2 keys does NOT throw", () => {
+    expect(() => loadEnv({ ...VALID_ENV })).not.toThrow();
+    const env = loadEnv({ ...VALID_ENV });
+    expect(env.OPENCLAW_API_TOKEN).toBeUndefined();
+    expect(env.OPENCLAW_WEBHOOK_SECRET).toBeUndefined();
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
+    expect(env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBeUndefined();
+    expect(env.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
+    expect(env.DATABASE_URL).toBeUndefined();
+    expect(env.AEGIS_SESSION_SECRET).toBeUndefined();
+    expect(env.AEGIS_SESSION_PASSPHRASE_HASH).toBeUndefined();
+    expect(env.DISCORD_WEBHOOK_URL).toBeUndefined();
+  });
+
+  it("throws readable error when OPENCLAW_WEBHOOK_SECRET is shorter than 32 chars", () => {
+    expect(() =>
+      loadEnv({ ...VALID_ENV, OPENCLAW_WEBHOOK_SECRET: "tooshort" })
+    ).toThrow(/OPENCLAW_WEBHOOK_SECRET must be ≥32 chars/);
+  });
+
+  it("throws readable error when AEGIS_SESSION_SECRET is shorter than 32 chars", () => {
+    expect(() =>
+      loadEnv({ ...VALID_ENV, AEGIS_SESSION_SECRET: "tooshort" })
+    ).toThrow(/AEGIS_SESSION_SECRET must be ≥32 chars/);
+  });
+});
