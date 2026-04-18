@@ -9,7 +9,13 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { loadEnv } from "@aegis/types";
-import { verifyPassphrase, issueSession, SESSION_COOKIE_NAME } from "@/lib/auth";
+import {
+  DEMO_USER_ID,
+  SESSION_COOKIE_NAME,
+  isDemoAuthDisabled,
+  issueSession,
+  verifyPassphrase,
+} from "@/lib/auth";
 import { apiOk, apiError } from "@/lib/api";
 
 const BodySchema = z.object({
@@ -17,6 +23,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  if (isDemoAuthDisabled()) {
+    return apiOk({ userId: DEMO_USER_ID, authDisabled: true });
+  }
+
   // Parse + validate body
   let body: z.infer<typeof BodySchema>;
   try {
@@ -50,16 +60,26 @@ export async function POST(req: Request) {
     return apiError({ status: 503, error: "internal", message: "Auth not configured" });
   }
 
-  const cookieValue = issueSession("operator", secret);
+  const cookieValue = issueSession(DEMO_USER_ID, secret);
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const requestProto = (() => {
+    try {
+      return new URL(req.url).protocol;
+    } catch {
+      return null;
+    }
+  })();
+  const shouldUseSecureCookie =
+    forwardedProto === "https" || requestProto === "https:";
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, cookieValue, {
     httpOnly: true,
-    secure: true,
+    secure: shouldUseSecureCookie,
     sameSite: "lax",
     path: "/",
     maxAge: 7 * 86400,
   });
 
-  return apiOk({ userId: "operator" });
+  return apiOk({ userId: DEMO_USER_ID });
 }

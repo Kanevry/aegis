@@ -6,9 +6,14 @@ import { createHmac, scryptSync, randomBytes, timingSafeEqual } from "node:crypt
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 export const SESSION_COOKIE_NAME = "aegis_session" as const;
+export const DEMO_USER_ID = "operator" as const;
 
 const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1 } as const;
 const KEY_LEN = 64;
+
+export function isDemoAuthDisabled(): boolean {
+  return process.env["AEGIS_DEMO_DISABLE_AUTH"] === "true";
+}
 
 // ── Hash format: scrypt$N=16384,r=8,p=1$<salt_hex>$<key_hex> ─────────────────
 
@@ -107,6 +112,14 @@ export function verifySession(
 ):
   | { valid: true; userId: string; expiresAt: Date }
   | { valid: false } {
+  if (isDemoAuthDisabled()) {
+    return {
+      valid: true,
+      userId: DEMO_USER_ID,
+      expiresAt: new Date(Date.now() + 7 * 86400 * 1000),
+    };
+  }
+
   if (!cookie || typeof cookie !== "string") {
     return { valid: false };
   }
