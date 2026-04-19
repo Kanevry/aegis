@@ -1,0 +1,25 @@
+# .vault.yaml — Meta-Vault Registration for aegis
+# Codex Vienna Hackathon 2026-04-18 prototype: Observable Agentic Hardening
+# Schema: packages/zod-schemas/src/vault-registration.ts (projects-baseline)
+# Docs:   docs/VAULT-REGISTRATION.md (projects-baseline)
+
+apiVersion: vault.gotzendorfer/v1
+kind: Repository
+
+metadata:
+  name: aegis
+  slug: aegis
+  tier: archived
+  owner: bernhard
+
+spec:
+  techStack: [nextjs, react, typescript, tailwind, sentry, openai, anthropic, ai-sdk, supabase, postgres]
+  status: maintenance
+  tags: [agent-hardening, codex-vienna, hackathon, observability, eval-framework]
+  summary: 'Five-layer defense middleware for OpenAI agents with Sentry observability — Codex Vienna hackathon prototype demonstrating agentic hardening (B1–B5 layers) via safety scoring and pattern-based fingerprinting.'
+  links:
+    gitlab: agents/aegis
+    docs: README.md
+  syncFiles:
+    - CLAUDE.md
+    - README.md
