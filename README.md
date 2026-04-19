@@ -15,11 +15,16 @@
 
 </div>
 
+> **Project status — hackathon prototype.** Built in 6 hours on 2026-04-18 at the
+> Codex Vienna Hackathon. Not actively maintained. Issues and PRs may go
+> unanswered. The code is public for reference and learning — self-host at your
+> own risk.
+
 ---
 
 ## Why Ægis
 
-Every other agent demo shows what AI _can_ do. Ægis shows — observably, with Sentry-native spans and fingerprinted issue groups — what an agent **refuses to do**, and fans the evidence out to your ops pipeline in under three seconds.
+Most agent demos show what an LLM can do. Ægis shows what it refuses to do — as Sentry spans you can query and fingerprinted issues Seer can reason about.
 
 ```mermaid
 flowchart LR
@@ -67,7 +72,7 @@ flowchart LR
 2. Click any of the 10 canonical attacks (e.g. `path-traversal-001`, `secret-exfil-001`).
 3. Watch: Flow visualization renders the blocked layer, the Sentry issue link opens to a fingerprinted exception, and the `gen_ai.invoke_agent` span shows `aegis.outcome=blocked` with the offending layer.
 
-No login. No configuration. The attack is visible in Sentry Discover within ~3 s and Seer picks it up automatically per `pattern_id`.
+The attack shows up in Sentry Discover within a few seconds; Seer groups repeats by `pattern_id`.
 
 Full eval matrix: [`docs/eval-matrix.md`](docs/eval-matrix.md). Submission copy: [`docs/submission-description.md`](docs/submission-description.md).
 
@@ -107,7 +112,7 @@ Composable via `createHardening({ flags })` → `{ allowed, safetyScore, blocked
 | `aegis.destructive_count` | integer | every span |
 | `aegis.layer`, `aegis.summary` | derived tags | blocked events (via `AegisSentryIntegration`) |
 
-**`captureException` with fingerprint → Seer.** When a layer blocks, `AegisBlockedException` is captured with `fingerprint: ['aegis-block', layer, pattern_id]`. Sentry groups attacks by pattern; Seer receives the issue and proposes a fix — exactly as it would for a production bug.
+**`captureException` with fingerprint → Seer.** When a layer blocks, `AegisBlockedException` is captured with `fingerprint: ['aegis-block', layer, pattern_id]`. Sentry groups attacks by pattern; Seer receives the issue and proposes a fix, same as for any other exception.
 
 **`beforeSend` redaction** strips PII and secrets before events leave the process.
 
@@ -345,7 +350,13 @@ sequenceDiagram
 
 **Stack.** Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/ui (Lyra) · OpenAI `gpt-4o-mini` via Vercel AI SDK · Anthropic `claude-haiku-4-5-20251001` · `@sentry/nextjs` v8 with `vercelAIIntegration()` · Postgres 16 · `pg-boss` 10 · pnpm workspace · Vercel deploy.
 
-**Team & event.** Built at the [Codex Community Hackathon Vienna](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18) — 2026-04-18, 11:00–17:00 CEST (6-hour build window), submission lock 17:30, Top-10 pitches 18:30. The hardening core (`@aegis/hardening`) is ported from a first-place prior hackathon entry, adapted for Node/Next and extended with full Sentry observability.
+**Team.** Four humans, hundreds of agents, six hours, one Vienna afternoon.
+[@apetersson](https://github.com/apetersson) ·
+[@ErmisCho](https://github.com/ErmisCho) ·
+[@Kanevry](https://github.com/Kanevry) ·
+[@topsrek](https://github.com/topsrek)
+
+**Event.** [Codex Community Hackathon Vienna](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18) — 2026-04-18, 11:00–17:00 CEST. The hardening core (`@aegis/hardening`) is ported from a first-place prior hackathon entry, adapted for Node/Next and extended with full Sentry observability.
 
 The jury-relevant tracks are **Agentic Coding** (we built with Codex CLI) and **Building Evals** (the 10-attack library + safety-score matrix).
 
