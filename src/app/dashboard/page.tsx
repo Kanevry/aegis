@@ -119,7 +119,7 @@ export default function DashboardOverviewPage() {
               <CardTitle>{card.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-neutral-100">{renderValue(card.slot)}</p>
+              <div className="text-3xl font-bold text-neutral-100">{renderValue(card.slot)}</div>
               <p className="mt-1 text-xs text-neutral-500">{card.description}</p>
             </CardContent>
           </Card>
