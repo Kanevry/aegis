@@ -8,12 +8,16 @@ import { QueueFilters, type ApprovalStatus } from './queue-filters';
 import { EmptyState } from './empty-state';
 import { ApprovalCardFull } from '@/components/dashboard/approvals/approval-card-full';
 
-export function ApprovalsShell() {
+export interface ApprovalsShellProps {
+  initialApprovals?: Approval[];
+}
+
+export function ApprovalsShell({ initialApprovals = [] }: ApprovalsShellProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
   const id = searchParams.get('id');
-  const status = (searchParams.get('status') ?? 'pending') as ApprovalStatus;
+  const status = (searchParams.get('status') ?? 'all') as ApprovalStatus;
   const tool = searchParams.get('tool') ?? '';
 
   // Selected approval — populated when the user clicks a row so we don't need
@@ -54,7 +58,7 @@ export function ApprovalsShell() {
   const handleStatusChange = React.useCallback(
     (nextStatus: ApprovalStatus) => {
       setSelectedApproval(null);
-      pushParams({ status: nextStatus === 'pending' ? null : nextStatus, id: null });
+      pushParams({ status: nextStatus === 'all' ? null : nextStatus, id: null });
     },
     [pushParams],
   );
@@ -94,7 +98,13 @@ export function ApprovalsShell() {
             onToolChange={handleToolChange}
           />
           <div className="flex-1 overflow-y-auto">
-            <Queue filters={filters} selectedId={id} onSelect={handleSelect} refreshKey={refreshKey} />
+            <Queue
+              filters={filters}
+              selectedId={id}
+              onSelect={handleSelect}
+              refreshKey={refreshKey}
+              initialApprovals={initialApprovals}
+            />
           </div>
         </div>
 

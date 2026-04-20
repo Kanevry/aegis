@@ -18,6 +18,7 @@ export interface QueueProps {
   onSelect: (approval: Approval) => void;
   /** Increment to force an immediate re-fetch outside the polling interval. */
   refreshKey?: number;
+  initialApprovals?: Approval[];
 }
 
 const POLL_INTERVAL_MS = 15_000;
@@ -42,9 +43,15 @@ async function fetchApprovals(filters: QueueFilters): Promise<Approval[]> {
   return body.data;
 }
 
-export function Queue({ filters, selectedId, onSelect, refreshKey }: QueueProps) {
-  const [approvals, setApprovals] = React.useState<Approval[]>([]);
-  const [loading, setLoading] = React.useState(true);
+export function Queue({
+  filters,
+  selectedId,
+  onSelect,
+  refreshKey,
+  initialApprovals = [],
+}: QueueProps) {
+  const [approvals, setApprovals] = React.useState<Approval[]>(initialApprovals);
+  const [loading, setLoading] = React.useState(initialApprovals.length === 0);
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
@@ -61,8 +68,12 @@ export function Queue({ filters, selectedId, onSelect, refreshKey }: QueueProps)
 
   // Initial load + polling every 15s; also re-fetches when refreshKey increments.
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional loading indicator before async fetch
-    setLoading(true);
+    // Keep the server-provided initial queue visible on first render; only show
+    // loading placeholders when we truly have no approvals to show yet.
+    if (refreshKey !== undefined || initialApprovals.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional loading indicator before async fetch
+      setLoading(approvals.length === 0);
+    }
     void load();
 
     const interval = setInterval(() => {
@@ -70,7 +81,7 @@ export function Queue({ filters, selectedId, onSelect, refreshKey }: QueueProps)
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [load, refreshKey]);
+  }, [approvals.length, initialApprovals.length, load, refreshKey]);
 
   if (loading) {
     return (
@@ -98,7 +109,20 @@ export function Queue({ filters, selectedId, onSelect, refreshKey }: QueueProps)
   }
 
   if (approvals.length === 0) {
-    return <EmptyState />;
+    return (
+      <EmptyState
+        title={
+          filters.status === 'all'
+            ? 'No approvals yet'
+            : `No ${filters.status} approvals`
+        }
+        description={
+          filters.status === 'all'
+            ? 'When an agent action requires operator sign-off, it will appear here and remain visible after resolution.'
+            : `Try another status filter or wait for the next ${filters.status} approval to arrive.`
+        }
+      />
+    );
   }
 
   return (

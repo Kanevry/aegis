@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {},
   typedRoutes: true,
+  allowedDevOrigins: ['127.0.0.1'],
   transpilePackages: ['@aegis/hardening', '@aegis/types'],
   // Cap serverAction bodies at 1 MB. Route handlers enforce field-level limits
   // via Zod schemas (e.g. passphrase: z.string().max(200)) — body-size cap here
