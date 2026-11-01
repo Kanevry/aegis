@@ -356,7 +356,7 @@ sequenceDiagram
 [@Kanevry](https://github.com/Kanevry) ·
 [@topsrek](https://github.com/topsrek)
 
-**Event.** [Codex Community Hackathon Vienna](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18) — 2026-04-18, 11:00–17:00 CEST. The hardening core (`@aegis/hardening`) is ported from a first-place prior hackathon entry, adapted for Node/Next and extended with full Sentry observability.
+**Event.** [Codex Community Hackathon Vienna](https://codex-hackathons.com/hackathons/codex-vienna-2026-04-18) — 2026-04-18, 11:00–17:00 CEST. The hardening core (`@aegis/hardening`) is ported from my BitGN Personal Agent Challenge entry (first place at the Vienna hub), adapted for Node/Next and extended with full Sentry observability.
 
 The jury-relevant tracks are **Agentic Coding** (we built with Codex CLI) and **Building Evals** (the 10-attack library + safety-score matrix).
 
